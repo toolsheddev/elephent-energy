@@ -16,7 +16,9 @@ export async function seedProjects() {
     await c.query('truncate utilities_new, zipcode_mapping')
     const names = [...new Set([...GAS_UTILITIES, ...ELECTRIC_UTILITIES])]
     for (const [i, n] of names.entries()) {
-      await c.query('insert into utilities_new(id, utility_name, is_gas, is_electrical) values ($1,$2,$3,$4)', [i + 1, n, GAS_UTILITIES.includes(n), ELECTRIC_UTILITIES.includes(n)])
+      // SAMPLE: which utilities Bayou supports is Retool data we were not given; these three are made up so the eligibility rule has something to work with
+      const bayou = ['Xcel Energy', 'Eversource', 'National Grid'].includes(n) ? n.toLowerCase().replace(/\s+/g, '_') : null
+      await c.query('insert into utilities_new(id, utility_name, is_gas, is_electrical, bayou_utility_name) values ($1,$2,$3,$4,$5)', [i + 1, n, GAS_UTILITIES.includes(n), ELECTRIC_UTILITIES.includes(n), bayou])
     }
     const zips = new Map<string, { zip: number; city: string; county: string; state: string }>()
     for (const b of bundles) if (b.house && Number(b.house.zipcode)) zips.set(b.house.zipcode, { zip: Number(b.house.zipcode), city: b.house.city, county: b.house.county, state: b.house.state })

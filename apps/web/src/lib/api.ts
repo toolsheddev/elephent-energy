@@ -67,6 +67,8 @@ export const api = {
     act<number>(projectId, 'quickAddBaseDesigns', payload),
   updateCircuitLength: (projectId: number, lineId: number, length: number, difficult: boolean) => act(projectId, 'updateCircuitLength', lineId, length, difficult),
   createMaintenancePlan: (projectId: number, p: { proposalId: number; level: string; counts: import('@sd/domain/maintenancePlan').MaintenanceCounts }) => act<SystemRec>(projectId, 'createMaintenancePlan', p),
+  listUtilities: () => http<{ utility_name: string; bayou_utility_name: string | null; is_gas: boolean; is_electrical: boolean }[]>('/api/utilities'),
+  requestUtilityData: (projectId: number, req: { kind: string; via: 'bayou' | 'email' | 'companycam'; photos: string[] }) => act(projectId, 'requestUtilityData', req),
   recalculateSystems: (projectId: number, systemIds: number[]) => act<{ systems: number; lines: number; notes: string[] }>(projectId, 'recalculateSystems', systemIds),
   addLineItems: (projectId: number, payload: { systemIds: number[]; lines: Omit<LineItemRec, 'id' | 'system_id'>[]; margin: { include: boolean; percents: Record<number, number | null> }; changeOrder?: ChangeOrderDetails }) =>
     act(projectId, 'addLineItems', payload),

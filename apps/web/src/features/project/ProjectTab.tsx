@@ -1,12 +1,14 @@
 import clsx from 'clsx'
 import { ClipboardList, Flame, Home, Landmark, Save, Thermometer, Undo2, UserRound, Activity } from 'lucide-react'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   Controller, FormProvider, useFieldArray, useForm, useFormContext, useWatch,
 } from 'react-hook-form'
 import { Banner, Button, Card, CardBody, CardHeader, FormGrid, StatusPill } from '@/components/ui/core'
 import { Checkbox, Input, MultiSelect, NumberInput, Segmented, Select, Switch, Textarea } from '@/components/ui/form'
 import { toast } from '@/components/ui/overlay'
+import { SizingDialog } from './SizingDialog'
+import { UtilityRequestDialog } from './UtilityRequestDialog'
 import { invoiceStatuses, rollupProposalStatus } from '@/lib/calc'
 import { useSaveProjectInfo } from '@/lib/hooks'
 import * as O from '@/lib/options'
@@ -18,7 +20,7 @@ const numOrNull = { setValueAs: (v: unknown) => (v === '' || v == null || Number
 
 const emptyHouse = (projectId: number): House => ({
   project_id: projectId, address: '', city: '', county: '', state: '', zipcode: '', home_type: '', units: 1, num_ppl: 0,
-  sq_footage: null, year_built: '', move_in_year: '', utility_customer_name: '', gas_utility: '', electric_utility: '',
+  sq_footage: null, year_built: '', move_in_year: '', move_in_month: '', utility_customer_name: '', gas_utility: '', electric_utility: '',
   paperless_billing: false, special_considerations: [], home_features: [], notes: '', manual_j_complete: false,
   ma: { primary_residence: false, energy_audit: '', recommendations_complete: '', certificate_of_completion: '', heat_loan_status: '', whole_home_verification: '' },
   co: { efficiency: '', xcel_whole_home: false }, nwco: { hear_amount: '', energy_smart: false },
@@ -80,6 +82,11 @@ export function ProjectForm({ bundle, children }: { bundle: ProjectBundle; child
 
 export function CustomerSection() {
   const { register, control, formState: { errors } } = useFormContext<Values>()
+  const projectId = useWatch({ control, name: 'project.id' })
+  const gasUtil = useWatch({ control, name: 'house.gas_utility' })
+  const elecUtil = useWatch({ control, name: 'house.electric_utility' })
+  const systemsInterest = useWatch({ control, name: 'project.systems_interest' })
+  const [requestOpen, setRequestOpen] = useState(false)
   const source = useWatch({ control, name: 'project.source' })
   const balance = useWatch({ control, name: 'project.referral_balance' })
   return (
@@ -109,9 +116,12 @@ export function CustomerSection() {
             )}
           />
           <Select wrapperClassName="col-span-12 sm:col-span-6 lg:col-span-3" label="Interest in maintenance" options={O.MAINTENANCE_INTEREST} {...register('project.maintenance_interest', { setValueAs: (v) => v || 'Unknown' })} />
-          <div className="col-span-12 lg:col-span-3">
+          <div className="col-span-12 flex flex-wrap gap-2 lg:col-span-6">
             <Button type="button" variant="primary" disabled title="Opens the customer's Google Drive folder. The folder link comes from Salesforce, which is not connected yet.">Open Project Folder</Button>
+            <Button type="button" disabled={!gasUtil || !elecUtil || !(systemsInterest ?? []).length} onClick={() => setRequestOpen(true)}
+              title={!gasUtil || !elecUtil || !(systemsInterest ?? []).length ? 'Pick the gas and electric utility (Home section) and at least one prospective system first' : undefined}>Request bills &amp; photos</Button>
           </div>
+          <UtilityRequestDialog open={requestOpen} onClose={() => setRequestOpen(false)} projectId={projectId} />
         </FormGrid>
       </CardBody>
     </Card>
@@ -141,7 +151,8 @@ export function HomeSection() {
 
           <NumberInput wrapperClassName="col-span-6 lg:col-span-3" label="Square footage" suffix="sq ft" {...register('house.sq_footage', numOrNull)} />
           <Input wrapperClassName="col-span-6 lg:col-span-3" label="Year built" inputMode="numeric" error={errors.house?.year_built?.message} {...register('house.year_built', { pattern: { value: /^(\d{4})?$/, message: '4-digit year' } })} />
-          <Select wrapperClassName="col-span-6 lg:col-span-3" label="Move-in year" options={O.MOVE_IN_YEARS} {...register('house.move_in_year')} />
+          <Select wrapperClassName="col-span-6 lg:col-span-2" label="Move-in month" options={O.MONTHS} {...register('house.move_in_month')} />
+          <Select wrapperClassName="col-span-6 lg:col-span-2" label="Move-in year" options={O.MOVE_IN_YEARS} {...register('house.move_in_year')} />
           <Input wrapperClassName="col-span-6 lg:col-span-3" label="Utility account name" {...register('house.utility_customer_name')} />
 
           <Select wrapperClassName="col-span-6 lg:col-span-3" label="Gas utility" options={O.GAS_UTILITIES} {...register('house.gas_utility')} />
@@ -366,9 +377,12 @@ export function SizingCard() {
   const county = useWatch({ control, name: 'house.county' })
   const hdd = HDD[state]
   const needsJ = state === 'CO' && MANUAL_J.has(county)
+  const sq = useWatch({ control, name: 'house.sq_footage' })
+  const [sizingOpen, setSizingOpen] = useState(false)
   return (
     <Card>
-      <CardHeader title="Heat pump sizing" actions={<Flame className="size-4 text-warn" />} />
+      <SizingDialog open={sizingOpen} onClose={() => setSizingOpen(false)} sqFootage={sq ?? null} />
+      <CardHeader title="Heat pump sizing" actions={<><Flame className="size-4 text-warn" /><Button size="sm" onClick={() => setSizingOpen(true)}>Sizing check</Button></>} />
       <CardBody className="space-y-4">
         {hdd ? (
           <div className="grid grid-cols-2 gap-4">

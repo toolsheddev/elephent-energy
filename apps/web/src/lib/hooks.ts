@@ -68,6 +68,8 @@ export const useUpdateCircuit = (id: number) =>
   useProjectMutation(id, (a: { lineId: number; length: number; difficult: boolean }) => api.updateCircuitLength(id, a.lineId, a.length, a.difficult))
 export const useCreateMaintenancePlan = (id: number) =>
   useProjectMutation(id, (p: Parameters<typeof api.createMaintenancePlan>[1]) => api.createMaintenancePlan(id, p))
+export const useUtilities = () => useQuery({ queryKey: ['utilities'], queryFn: api.listUtilities, staleTime: Infinity })
+export const useRequestUtilityData = (id: number) => useProjectMutation(id, (req: { kind: string; via: 'bayou' | 'email' | 'companycam'; photos: string[] }) => api.requestUtilityData(id, req))
 export const useRecalculate = (id: number) => useProjectMutation(id, (systemIds: number[]) => api.recalculateSystems(id, systemIds))
 export const useAddLineItems = (id: number) =>
   useProjectMutation(id, (p: Parameters<typeof api.addLineItems>[1]) => api.addLineItems(id, p))

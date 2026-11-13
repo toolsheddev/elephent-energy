@@ -30,6 +30,7 @@ export async function buildApp() {
   app.get('/api/refdata', async () => ref)
   app.get('/api/projects', async () => listProjects())
   app.get('/api/base-designs', async () => listBaseDesigns())
+  app.get('/api/utilities', async () => (await pool.query('select utility_name, bayou_utility_name, is_gas, is_electrical from utilities_new order by utility_name')).rows)
   app.post<{ Body: NewProjectInput }>('/api/projects', async (req) => ({ id: await createProject(req.body) }))
   app.delete<{ Params: { id: string } }>('/api/projects/:id', async (req) => {
     if (!(await deleteProject(Number(req.params.id)))) throw new NotFound(`Project ${req.params.id} not found`)

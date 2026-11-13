@@ -50,7 +50,7 @@ export async function createProject(input: NewProjectInput): Promise<number> {
       },
       house: {
         project_id: id, address, city, county: input.county?.trim() ?? '', state, zipcode: input.zipcode?.trim() ?? '', home_type: '', units: 1, num_ppl: 0, sq_footage: null,
-        year_built: '', move_in_year: '', utility_customer_name: '', gas_utility: '', electric_utility: '', paperless_billing: false, special_considerations: [], home_features: [],
+        year_built: '', move_in_year: '', move_in_month: '', utility_customer_name: '', gas_utility: '', electric_utility: '', paperless_billing: false, special_considerations: [], home_features: [],
         notes: '', manual_j_complete: false,
         ma: { primary_residence: false, energy_audit: '', recommendations_complete: '', certificate_of_completion: '', heat_loan_status: '', whole_home_verification: '' },
         co: { efficiency: '', xcel_whole_home: false }, nwco: { hear_amount: '', energy_smart: false },

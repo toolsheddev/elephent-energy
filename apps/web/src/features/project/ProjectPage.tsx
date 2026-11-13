@@ -3,7 +3,7 @@ import { Check, ChevronLeft, Mail, MapPin, Phone, Trash2, TriangleAlert } from '
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { EmptyState, Skeleton } from '@/components/ui/core'
+import { Button, EmptyState, Skeleton } from '@/components/ui/core'
 import { toast } from '@/components/ui/overlay'
 import { api } from '@/lib/api'
 import { readiness } from '@/lib/calc'
@@ -11,6 +11,7 @@ import { useProject } from '@/lib/hooks'
 import type { ProjectBundle } from '@/lib/types'
 import { ProjectStatusPill } from '../projects/ProjectsPage'
 import { ConfirmDialog, DesignTab } from './DesignTab'
+import { HearDialog } from './HearDialog'
 import { InvoicesTab } from './InvoicesTab'
 import { OptionCards } from './OptionCards'
 import { CustomerSection, ExistingSection, FinancingSection, HandoffSection, HomeSection, ProjectForm, SizingCard, StatusCard } from './ProjectTab'
@@ -115,6 +116,7 @@ export function ProjectPage() {
   const nav = useNavigate()
   const qc = useQueryClient()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [hearOpen, setHearOpen] = useState(false)
   const id = Number(useParams().projectId)
   const { data: b, isLoading, error } = useProject(id)
 
@@ -138,6 +140,7 @@ export function ProjectPage() {
           nav('/')
         }}
       />
+      {b.proposals.length > 0 && <HearDialog open={hearOpen} onClose={() => setHearOpen(false)} bundle={b} proposalId={b.project.finalized_proposal_id ?? b.proposals[0]!.id} />}
       <Link to="/" className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-ink-3 hover:text-brand-700"><ChevronLeft className="size-4" /> All projects</Link>
       <ProjectForm bundle={b}>
         <div className="space-y-5">
@@ -156,7 +159,10 @@ export function ProjectPage() {
                 <DesignTab bundle={b} />
               </Section>
               <Section id="sec-financing" bare title="Financing and rebates"><FinancingSection /></Section>
-              <Section id="sec-invoices" bare title="Invoices"><InvoicesTab bundle={b} /></Section>
+              <Section id="sec-invoices" bare title="Invoices">
+                {(b.invoices?.length ?? 0) > 0 && <div className="flex justify-end"><Button onClick={() => setHearOpen(true)}>Open HEAR Info</Button></div>}
+                <InvoicesTab bundle={b} />
+              </Section>
               <Section id="sec-handoff" bare title="Handoff"><HandoffSection /></Section>
               <Section id="sec-status" bare title="Status and people"><StatusCard bundle={b} /></Section>
             </div>

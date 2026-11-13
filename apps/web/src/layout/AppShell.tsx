@@ -131,7 +131,7 @@ export function AppShell() {
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-surface/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1560px] items-center gap-4 px-5">
-          <Link to="/" aria-label="Elephant Energy home" className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-brand-500 to-brand-800 text-[12px] font-extrabold tracking-tight text-white shadow-card">EE</Link>
+          <Link to="/" aria-label="Elephant Energy home" className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-700 text-[12px] font-extrabold tracking-tight text-white shadow-card">EE</Link>
           <AppSwitcher />
           <div className="mx-1 hidden h-6 w-px bg-line md:block" />
           <div className="hidden md:block"><Breadcrumbs /></div>

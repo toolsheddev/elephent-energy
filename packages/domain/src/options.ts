@@ -17,6 +17,7 @@ export const COUNTIES_BY_STATE: Record<string, string[]> = {
 export const HOME_TYPES = ['Single family', 'Townhome', 'Duplex', 'Condo', 'Multifamily (2–4 units)', 'Mobile home']
 export const GAS_UTILITIES = ['Xcel Energy', 'Black Hills Energy', 'Eversource', 'National Grid', 'Columbia Gas', 'None / propane']
 export const ELECTRIC_UTILITIES = ['Xcel Energy', 'Eversource', 'National Grid', 'Holy Cross Energy', 'Yampa Valley Electric', 'Platte River Power']
+export const MONTHS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((value, i) => ({ value, label: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][i]! }))
 export const MOVE_IN_YEARS = Array.from({ length: 40 }, (_, i) => String(2026 - i))
 export const SPECIAL_CONSIDERATIONS = ['Historic district', 'HOA approval', 'Limited attic access', 'Slab foundation', 'Knob-and-tube wiring', 'Aluminum wiring', 'Septic']
 export const HOME_FEATURES = ['Finished basement', 'Crawlspace', 'Attic', 'Garage', 'Solar PV', 'Pool', 'Radiant floors', 'Ductwork present']

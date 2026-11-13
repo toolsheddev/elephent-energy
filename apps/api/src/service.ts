@@ -349,6 +349,12 @@ export const actions: Record<string, (b: ProjectBundle, nextId: NextId, ...args:
     for (const id of touched) touch(b, id, nextId)
     return { value: touched.size, parts: { design: true, info: true } }
   },
+  /** "Submit Request" in the utility request modal. Retool emails the customer (or creates a Bayou customer); here the request is recorded on the project. */
+  requestUtilityData(b, _n, req: { kind: string; via: 'bayou' | 'email' | 'companycam'; photos: string[] }) {
+    if (!['bills', 'photos', 'both', 'companycam'].includes(req.kind)) throw new Error('Choose what to request')
+    b.project = { ...b.project, statuses: { ...b.project.statuses, utility_request: { kind: req.kind, via: req.via, photos: req.photos ?? [], at: new Date().toISOString() } }, updated_at: now() }
+    return { value: b.project.statuses.utility_request, parts: { info: true } }
+  },
   /** The Recalculate button: margin and incentives on the current lines of the given systems (no re-spec), then permits and the financing fee. */
   recalculateSystems(b, nextId, systemIds: number[]) {
     const notes: string[] = []

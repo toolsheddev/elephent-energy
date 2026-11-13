@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { BadgeCheck, CheckCircle2, ExternalLink, FileText, Pencil, ReceiptText, Send, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { jumpTo } from './QuotePanel'
 import { Banner, Button, Card, CardBody, CardHeader, EmptyState, StatusPill } from '@/components/ui/core'
 import { NumberInput, Segmented, Switch, Textarea } from '@/components/ui/form'
 import { Modal, toast } from '@/components/ui/overlay'
@@ -23,7 +23,6 @@ const DEPOSIT_CHOICES: { value: string; label: string; sub?: string }[] = [
 ]
 
 export function InvoicesTab({ bundle: b }: { bundle: ProjectBundle }) {
-  const [, setParams] = useSearchParams()
   const invoices = b.invoices ?? []
 
   if (!b.project.finalized_proposal_id) {
@@ -33,11 +32,11 @@ export function InvoicesTab({ bundle: b }: { bundle: ProjectBundle }) {
       <Card>
         <EmptyState
           icon={<ReceiptText className="size-5" />} title={designed ? 'Finalize a proposal first' : 'Design a system first'}
-          action={<Button variant="primary" onClick={() => setParams({ tab: 'design' })}>Go to System Design</Button>}
+          action={<Button variant="primary" onClick={() => jumpTo('sec-design')}>Go to Options and pricing</Button>}
         >
           {designed
-            ? `Invoices are built from the finalized proposal. ${pending ? 'On the System Design tab, open the proposal you want and press Finalize at the bottom.' : 'Create a proposal on the System Design tab and press Finalize.'}`
-            : 'This project has no systems yet. Add a system on the System Design tab, finalize the proposal, then come back here to generate the deposit and final invoices.'}
+            ? `Invoices are built from the finalized proposal. ${pending ? 'Pick the option you want under Options and pricing and press Finalize in the panel on the right.' : 'Create an option under Options and pricing and press Finalize.'}`
+            : 'This project has no systems yet. Add a system under Options and pricing, finalize the proposal, then come back here to generate the deposit and final invoices.'}
         </EmptyState>
       </Card>
     )
@@ -219,7 +218,7 @@ function InvoiceView({ bundle: b, invoice }: { bundle: ProjectBundle; invoice: I
       <Card>
         <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
           <div className="flex items-center gap-3">
-            <span className="flex size-11 items-center justify-center rounded-lg bg-linear-to-br from-brand-500 to-brand-800 text-[14px] font-extrabold text-white">EE</span>
+            <span className="flex size-11 items-center justify-center rounded-lg bg-brand-700 text-[14px] font-extrabold text-white">EE</span>
             <div>
               <h2 className="text-[20px] font-extrabold leading-tight tracking-tight">Customer Invoice</h2>
               <p className="text-[13px] text-ink-3">{invoice.invoice_type} · #{invoice.id} · created {new Date(invoice.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>

@@ -9,7 +9,7 @@ import type { ProjectBundle, Proposal, SystemRec } from '@/lib/types'
 /* Type pills use a fixed hue per system type so rows are recognisable at a glance (same idea as Retool's coloured tags). */
 const TYPE_STYLE: Record<string, string> = {
   other: 'bg-fuchsia-100 text-fuchsia-800',
-  'water heater': 'bg-indigo-100 text-indigo-800',
+  'water heater': 'bg-sky-100 text-sky-800',
   hvac: 'bg-sky-100 text-sky-800',
   ev: 'bg-emerald-100 text-emerald-800',
   panel: 'bg-amber-100 text-amber-800',
@@ -25,7 +25,7 @@ const PROPOSAL_STATUS_STYLE: Record<string, string> = {
   finalized: 'bg-emerald-100 text-emerald-800',
   'out for signature': 'bg-sky-100 text-sky-800',
   'out for review': 'bg-amber-100 text-amber-800',
-  'under review': 'bg-violet-100 text-violet-800',
+  'under review': 'bg-amber-100 text-amber-900',
   pending: 'bg-stone-200 text-stone-700',
   rejected: 'bg-rose-100 text-rose-800',
 }

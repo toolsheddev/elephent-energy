@@ -18,6 +18,7 @@ const blankHouse = (project_id: number): Omit<House, 'address' | 'city' | 'count
   sq_footage: 1800,
   year_built: '1985',
   move_in_year: '2018',
+  move_in_month: '06',
   utility_customer_name: '',
   gas_utility: 'Xcel Energy',
   electric_utility: 'Xcel Energy',

@@ -14,6 +14,8 @@ export interface ProjectStatuses {
   deposit_final: StatusValue | string
   retrospective: StatusValue | string
   equipment: StatusValue | string
+  /** The last "Request bills & photos" sent for this project (nothing is actually emailed in this build). */
+  utility_request?: { kind: string; via: 'bayou' | 'email' | 'companycam'; photos: string[]; at: string }
 }
 
 export interface Project {
@@ -65,6 +67,8 @@ export interface House {
   sq_footage: number | null
   year_built: string
   move_in_year: string
+  /** '01'..'12' or ''. Retool builds the move-in date from the month and the year. */
+  move_in_month: string
   utility_customer_name: string
   gas_utility: string
   electric_utility: string

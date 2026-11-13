@@ -64,7 +64,7 @@ export async function loadBundle(id: number, c: Db = pool): Promise<ProjectBundl
   const houseOut: House | null = h && {
     project_id: id, address: s(h.address), city: s(h.city), county: s(h.county), state: s(h.state), zipcode: s(h.zipcode), home_type: s(h.home_type),
     units: h.units ?? 1, num_ppl: h.num_ppl ?? 0, sq_footage: h.sq_footage, year_built: h.year_built === null ? '' : String(h.year_built),
-    move_in_year: h.move_in_year === null ? '' : String(h.move_in_year), utility_customer_name: s(h.utility_customer_name), gas_utility: s(h.gas_utility),
+    move_in_year: h.move_in_year === null ? '' : String(h.move_in_year), move_in_month: typeof h.move_in_date === 'string' ? h.move_in_date.slice(5, 7) : '', utility_customer_name: s(h.utility_customer_name), gas_utility: s(h.gas_utility),
     electric_utility: s(h.electric_utility), paperless_billing: h.has_paperless_billing ?? false, special_considerations: list(h.special_considerations),
     home_features: list(h.home_features), notes: s(h.addtl_notes), manual_j_complete: h.manual_j === 'complete',
     ma: normalizeMA(h.massachusetts_details ?? {}), co: normalizeCO(h.colorado_details ?? {}), nwco: p.nwco_details ?? {},
@@ -185,16 +185,17 @@ export async function saveBundle(c: Db, b: ProjectBundle, nextId: () => number, 
       const h = b.house
       await c.query(
         `insert into houses_new(id, customer_id, address, city, county, state, zipcode, home_type, units, num_ppl, sq_footage, year_built, move_in_year, utility_customer_name,
-           gas_utility, electric_utility, has_paperless_billing, special_considerations, home_features, addtl_notes, manual_j, massachusetts_details, colorado_details)
-         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+           gas_utility, electric_utility, has_paperless_billing, special_considerations, home_features, addtl_notes, manual_j, massachusetts_details, colorado_details, move_in_date)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
          on conflict (id) do update set address=excluded.address, city=excluded.city, county=excluded.county, state=excluded.state, zipcode=excluded.zipcode,
            home_type=excluded.home_type, units=excluded.units, num_ppl=excluded.num_ppl, sq_footage=excluded.sq_footage, year_built=excluded.year_built,
            move_in_year=excluded.move_in_year, utility_customer_name=excluded.utility_customer_name, gas_utility=excluded.gas_utility, electric_utility=excluded.electric_utility,
            has_paperless_billing=excluded.has_paperless_billing, special_considerations=excluded.special_considerations, home_features=excluded.home_features,
-           addtl_notes=excluded.addtl_notes, manual_j=excluded.manual_j, massachusetts_details=excluded.massachusetts_details, colorado_details=excluded.colorado_details`,
+           addtl_notes=excluded.addtl_notes, manual_j=excluded.manual_j, massachusetts_details=excluded.massachusetts_details, colorado_details=excluded.colorado_details, move_in_date=excluded.move_in_date`,
         [houseId, customerId, h.address, h.city, h.county, h.state, h.zipcode, h.home_type, h.units, h.num_ppl, h.sq_footage ?? null, numOrNull(h.year_built), numOrNull(h.move_in_year),
           h.utility_customer_name, h.gas_utility, h.electric_utility, h.paperless_billing, joinList(h.special_considerations), joinList(h.home_features), nullIfEmpty(h.notes),
-          h.manual_j_complete ? 'complete' : null, jb(h.ma), jb(h.co)])
+          h.manual_j_complete ? 'complete' : null, jb(h.ma), jb(h.co),
+          h.move_in_year && h.move_in_month ? `${h.move_in_year}-${h.move_in_month}-01` : null])
     }
   }
 
