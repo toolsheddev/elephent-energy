@@ -37,12 +37,12 @@ Schema: `apps/api/db/schema.sql`.
 
 All customers, addresses and prices in the seed are invented sample data.
 
-## Deploying (free)
+## Deploying (free, no card)
 
-The front end is static (Netlify reads `netlify.toml`). The API is a Node service. `render.yaml` sets it up on Render's free plan, in the Singapore region next to the Supabase database.
+Everything runs on one Netlify site: the web app is static, and the API is a Netlify Function (`apps/api/src/netlify.ts`, bundled by `scripts/build-netlify.mjs`). `netlify.toml` wires it up, so `/api/*` on the site reaches the function.
 
-1. Render dashboard > New > Blueprint > pick this repo. When asked, paste `DATABASE_URL` (the Supabase session pooler URL from your `.env`). Deploy.
-2. Open `<your-service>.onrender.com/api/health`. It should show `{"ok":true,...}`.
-3. Netlify > Site settings > Environment variables: add `VITE_API_URL` = that Render URL (no trailing slash), then redeploy the site.
+1. Netlify > Add new site > Import from Git > pick this repo. The build settings come from `netlify.toml`.
+2. Site configuration > Environment variables: add `DATABASE_URL` (the Supabase session pooler URL from your `.env`). Do not set `VITE_API_URL`.
+3. Deploy. Then open `https://<your-site>.netlify.app/api/health`. It should show `{"ok":true,...}`.
 
-The free plan puts the API to sleep after 15 minutes without requests, and the first request afterwards takes about 30 to 60 seconds. To avoid that, a free monitor (UptimeRobot or cron-job.org) can call `/api/health` every 10 minutes.
+Notes: this is a demo setup. The function runs in Netlify's default region, so each action can take a second or two; the first request after a quiet period is slower still. A function call is limited to about 10 seconds. There is no login, so anyone with the link can read and change the data.

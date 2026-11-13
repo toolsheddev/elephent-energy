@@ -1,9 +1,21 @@
-# Static front end only. The API is a separate Node service (see README, "Deploying").
+# Front end (static) plus the API as one Netlify Function.
 [build]
-  command = "npm run build"
+  command = "node scripts/build-netlify.mjs && npm run build"
   publish = "apps/web/dist"
 
-# Single-page app: every path serves index.html (anything under /api/ is NOT rewritten, so a missing API shows as a 404, not a blank page)
+  [build.environment]
+    NODE_VERSION = "22"
+
+[functions]
+  directory = "netlify/functions"
+
+# /api/* goes to the function (checked before the single-page-app fallback below)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# Single-page app: every other path serves index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"

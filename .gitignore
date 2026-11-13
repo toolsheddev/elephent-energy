@@ -16,3 +16,6 @@ legacy/**/*.json
 !/package.json
 !/package-lock.json
 !/tsconfig*.json
+
+# Built by scripts/build-netlify.mjs
+/netlify/functions/api.js

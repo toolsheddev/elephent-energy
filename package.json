@@ -20,6 +20,7 @@
     "verify": "npm run verify -w @sd/api"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.0.0",
+    "esbuild": "^0.28.2"
   }
 }

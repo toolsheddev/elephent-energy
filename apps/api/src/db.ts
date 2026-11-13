@@ -13,7 +13,7 @@ types.setTypeParser(1184, (v) => new Date(v).toISOString())   // timestamptz -> 
 export const DATABASE_URL = process.env.DATABASE_URL ?? 'postgres://postgres@localhost:5433/system_design'
 // Supabase (and most hosted Postgres) needs TLS; a local database does not.
 const local = /@(localhost|127\.0\.0\.1)[:/]/.test(DATABASE_URL)
-export const pool = new Pool({ connectionString: DATABASE_URL, max: 8, ssl: local ? undefined : { rejectUnauthorized: false } })
+export const pool = new Pool({ connectionString: DATABASE_URL, max: process.env.SERVERLESS ? 2 : 8, ssl: local ? undefined : { rejectUnauthorized: false } })
 
 export type Db = Pick<pg.PoolClient, 'query'>
 
