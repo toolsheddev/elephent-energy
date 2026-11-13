@@ -54,7 +54,9 @@ export function AddLineItemsDialog({
 }: { open: boolean; onClose: () => void; bundle: ProjectBundle; proposal: Proposal; focusedSystem: SystemRec | null }) {
   const add = useAddLineItems(b.project.id)
   const designed = useMemo(() => b.systems.filter((s) => s.system_type !== 'other'), [b.systems])
-  const label = (s: SystemRec) => `${s.nickname || s.system_type}-${s.id} (${s.system_type})`
+  const TYPE_NAME: Record<string, string> = { hvac: 'Heat pump', 'water heater': 'Water heater', ev: 'EV charger', panel: 'Electrical', cooktop: 'Induction', 'energy efficiency': 'Efficiency', 'labor warranty': 'Warranty', adder: 'Other', maintenance: 'Maintenance' }
+  const label = (s: SystemRec) => s.nickname || TYPE_NAME[s.system_type] || s.system_type
+  const [allOptions, setAllOptions] = useState(false)
 
   const [systemIds, setSystemIds] = useState<number[]>([])
   const [include, setInclude] = useState(true)
@@ -133,14 +135,20 @@ export function AddLineItemsDialog({
     >
       <div className="space-y-5">
         <fieldset>
-          <legend className="mb-1.5 text-[13px] font-semibold text-ink-2">Apply to systems</legend>
+          <legend className="mb-1.5 flex w-full items-center justify-between gap-2 text-[12.5px] font-semibold text-ink-2">
+            <span>Add to {allOptions ? 'systems' : `systems in ${proposal.nickname || 'this option'}`}</span>
+            {designed.some((s) => s.proposal_id !== proposal.id) && (
+              <button type="button" onClick={() => setAllOptions((v) => !v)} className="cursor-pointer text-[12.5px] font-semibold text-brand-700 hover:underline">{allOptions ? 'Only this option' : 'Show other options too'}</button>
+            )}
+          </legend>
           {designed.length === 0 ? (
             <Banner tone="warn" title="No systems yet">Add a system to this project first.</Banner>
           ) : (
             <div className="max-h-40 space-y-0.5 overflow-y-auto rounded-lg border border-line p-1.5">
-              {designed.map((s) => (
+              {designed.filter((s) => allOptions || s.proposal_id === proposal.id || systemIds.includes(s.id)).map((s) => (
                 <Checkbox
-                  key={s.id} className="rounded-md px-2 py-1 hover:bg-sunken" label={<span>{label(s)} <span className="text-ink-3">· {b.proposals.find((p) => p.id === s.proposal_id)?.nickname}</span></span>}
+                  key={s.id} className="rounded-md px-2 py-1 hover:bg-sunken"
+                  label={<span>{label(s)} <span className="text-ink-3">· {TYPE_NAME[s.system_type] ?? s.system_type}{s.proposal_id !== proposal.id ? ` · ${b.proposals.find((p) => p.id === s.proposal_id)?.nickname}` : ''}</span></span>}
                   checked={systemIds.includes(s.id)} onChange={(e) => setSystemIds((ids) => (e.target.checked ? [...ids, s.id] : ids.filter((x) => x !== s.id)))}
                 />
               ))}

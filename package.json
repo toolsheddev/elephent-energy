@@ -18,7 +18,8 @@
     "test": "npm run test -w @sd/engine",
     "db:reset": "npm run seed:reset -w @sd/api",
     "verify": "npm run verify -w @sd/api",
-    "check:dropdowns": "npm run check:dropdowns -w @sd/api"
+    "check:dropdowns": "npm run check:dropdowns -w @sd/api",
+    "user": "npm run user -w @sd/api --"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",

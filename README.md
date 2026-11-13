@@ -46,3 +46,30 @@ Everything runs on one Netlify site: the web app is static, and the API is a Net
 3. Deploy. Then open `https://<your-site>.netlify.app/api/health`. It should show `{"ok":true,...}`.
 
 Notes: this is a demo setup. The function runs in Netlify's default region, so each action can take a second or two; the first request after a quiet period is slower still. A function call is limited to about 10 seconds. There is no login, so anyone with the link can read and change the data.
+
+## Sign-in (Supabase Auth)
+
+People sign in with Supabase Auth (email + password, "Forgot password" emails). The browser sends the Supabase access token with every API call; the API checks it
+against the project's public signing keys. No Supabase secret key is used anywhere.
+
+Who gets in is decided by the app's `users` table, not by Supabase: only people on that list (active) can use System Design, with the role stored there
+(admin or user). A database trigger on auth.users adds a row (role user) whenever a Supabase account is created; uninvited accounts wait for an admin to approve them. Admins manage the list on the Team page (account menu > Team): invite, approve, change role, block, remove.
+Removing someone takes their access away at once.
+
+Every table in `public` has row level security turned on with no policies, so the anon key in the browser cannot read or change data through
+Supabase's REST API. The app's API connects as the table owner and is not affected. (Set by the schema on start.)
+
+Setup, once:
+1. Supabase > Project Settings > API keys: copy the anon key into `.env` as `VITE_SUPABASE_ANON_KEY` (next to `VITE_SUPABASE_URL`).
+2. Supabase > Authentication > Sign In / Providers: leave "Allow new users to sign up" on, so invites can create accounts. Having a Supabase account alone
+   gives no access: the person must be on the Team list.
+3. Supabase > Authentication > URL Configuration: Site URL = your Netlify address; add `http://localhost:5173` to Redirect URLs.
+4. First admin: create your account in Supabase > Authentication > Users, then `npm run user -- add you@company.com "Your Name" --admin`.
+5. Netlify > Environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (optionally `AUTH_ALLOWED_DOMAINS`), then redeploy.
+
+```
+npm run user -- add someone@company.com "Name" [--admin]   # same as Invite, without the email
+npm run user -- role someone@company.com admin
+npm run user -- remove someone@company.com
+npm run user -- list
+```

@@ -103,6 +103,7 @@ export function AddSystemDrawer({
     fromRetoolAssignments(savedBB?.assignments, savedInput?.heatPump?.ahu?.units?.length ?? 0, savedInput?.heatPump?.miniSplit?.units?.length ?? 0))
   const setAssign = (kind: 'ahu' | 'ms', index: number, id: string) =>
     setBbAssign((cur) => { const next = { ahu: [...cur.ahu], ms: [...cur.ms] }; next[kind][index] = id || null; return next })
+  const [showPricing, setShowPricing] = useState(false)
   const [step, setStep] = useState<'setup' | 'lines'>('setup')
   const [drafts, setDrafts] = useState<Draft[]>([])
   const [active, setActive] = useState('')
@@ -292,9 +293,9 @@ export function AddSystemDrawer({
         ) : (
           <>
             <Button icon={<ArrowLeft className="size-4" />} onClick={() => setStep('setup')}>Previous</Button>
-            <p className="mr-auto text-[13px] text-ink-3">{allOk ? `${drafts.length} ${drafts.length === 1 ? 'proposal' : 'proposals'} ready` : 'Fix the errors, then go back and try again.'}</p>
+            <p className="mr-auto text-[13px] text-ink-3">{allOk ? `${drafts.length} ${drafts.length === 1 ? 'option' : 'options'} ready` : 'Fix the errors, then go back and try again.'}</p>
             <Button onClick={onClose}>Cancel</Button>
-            <Button variant="primary" disabled={!allOk} loading={saving} onClick={finish}>Finish adding system</Button>
+            <Button variant="primary" disabled={!allOk} loading={saving} onClick={finish}>Finish</Button>
           </>
         )
       }
@@ -306,19 +307,18 @@ export function AddSystemDrawer({
           {/* System type */}
           {!editing && (
             <div>
-              <h3 className="mb-2 text-[13px] font-bold uppercase tracking-wider text-ink-3">What are you adding?</h3>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <h3 className="mb-1.5 text-[12.5px] font-semibold text-ink-2">System type</h3>
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="System type">
                 {SYSTEM_TYPES.map((t) => {
                   const on = type === t.value
                   const ok = !!SUPPORTED[t.value]
                   return (
                     <button
-                      key={t.value} type="button" disabled={!ok} aria-pressed={on}
+                      key={t.value} type="button" disabled={!ok} role="radio" aria-checked={on} title={ok ? t.hint : 'Coming soon'}
                       onClick={() => { setType(t.value as SystemType); setNickname('') }}
-                      className={clsx('cursor-pointer rounded-lg border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50', on ? 'border-brand-600 bg-brand-50 ring-2 ring-brand-100' : 'border-line bg-surface hover:border-brand-300')}
+                      className={clsx('inline-flex h-8 cursor-pointer items-center rounded-full border px-3 text-[13px] font-semibold leading-none transition-colors disabled:cursor-not-allowed disabled:opacity-50', on ? 'border-brand-600 bg-brand-600 text-white' : 'border-line-strong bg-surface text-ink-2 hover:border-brand-400 hover:text-ink')}
                     >
-                      <span className="block text-[13.5px] font-bold leading-tight">{t.label}</span>
-                      <span className="mt-0.5 block text-[12px] leading-snug text-ink-3">{ok ? t.hint : 'Coming soon'}</span>
+                      {t.label}
                     </button>
                   )
                 })}
@@ -327,23 +327,19 @@ export function AddSystemDrawer({
           )}
 
           <Card>
-            <CardHeader title="Project setup" subtitle="Applies to pricing and rebate eligibility." />
+            <CardHeader title="Where it goes" />
             <CardBody>
               <FormGrid>
                 {editing ? (
                   <Input wrapperClassName="col-span-12 sm:col-span-6" label="Proposal" readOnly value={proposal.nickname} />
                 ) : (
                   <MultiSelect
-                    className="col-span-12 sm:col-span-6" label="Select proposal" hint="Pick several to add the system to all of them."
-                    options={[{ value: 'NEW', label: '✨ Create a new proposal' }, ...bundle.proposals.map((x) => ({ value: String(x.id), label: x.nickname }))]}
+                    className="col-span-12 sm:col-span-6" label="Add to option" hint="Pick several to add it to each of them."
+                    options={[{ value: 'NEW', label: 'Create a new option' }, ...bundle.proposals.map((x) => ({ value: String(x.id), label: x.nickname }))]}
                     value={selProposals.map(String)} onChange={(v) => setSelProposals(v.map((x) => (x === 'NEW' ? ('NEW' as const) : Number(x))))}
                   />
                 )}
                 <Input wrapperClassName="col-span-12 sm:col-span-6" label="System nickname" placeholder={defaultName(type)} value={nickname} onChange={(e) => setNickname(e.target.value)} />
-                <Select wrapperClassName="col-span-12 sm:col-span-4" label="Pricing structure" options={PRICING_STRUCTURES} value={pricing} onChange={(e) => setPricing(e.target.value)} />
-                <Select wrapperClassName="col-span-6 sm:col-span-4" label="Pricing effective date" options={priceDates((input.PricingEffectiveDate ?? '').slice(0, 10))} value={(input.PricingEffectiveDate ?? '').slice(0, 10)} onChange={(e) => set(['PricingEffectiveDate'], e.target.value)} />
-                <NumberInput wrapperClassName="col-span-6 sm:col-span-4" label="Target margin" suffix="%" step="0.5" min={0} max={90} value={Math.round(margin * 1000) / 10} onChange={(e) => setMargin((Number(e.target.value) || 0) / 100)} />
-                <Input wrapperClassName="col-span-6 sm:col-span-4" label="Approx install date" type="date" value={(input.rebateEffectiveDate ?? '').slice(0, 10)} onChange={(e) => set(['rebateEffectiveDate'], e.target.value)} />
                 {type === 'hvac' && house?.state === 'CO' && (
                   <Select
                     wrapperClassName="col-span-12 sm:col-span-4" label="Heating load coverage" required placeholder="Select an option" options={HEATING_LOAD_COVERAGE}
@@ -362,13 +358,30 @@ export function AddSystemDrawer({
                     options={SURGE_OPTIONS} value={input.surgeProtection ?? ''} onChange={(e) => set(['surgeProtection'], e.target.value || null)}
                   />
                 )}
+                {/* Pricing defaults come from the option and rarely change, so they fold into one line */}
+                <div className="col-span-12 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md bg-canvas px-3 py-2 text-[13px]">
+                  <span className="text-ink-3">Pricing</span>
+                  <span className="font-medium">{PRICING_STRUCTURES.find((x) => x.value === pricing)?.label ?? pricing}</span>
+                  <span className="text-ink-3">·</span><span>prices from {(input.PricingEffectiveDate ?? '').slice(0, 10) || '—'}</span>
+                  <span className="text-ink-3">·</span><span>target margin {Math.round(margin * 1000) / 10}%</span>
+                  <span className="text-ink-3">·</span><span>install {(input.rebateEffectiveDate ?? '').slice(0, 10) || '—'}</span>
+                  <button type="button" onClick={() => setShowPricing((v) => !v)} aria-expanded={showPricing} className="ml-auto cursor-pointer font-semibold text-brand-700 hover:underline">{showPricing ? 'Done' : 'Change'}</button>
+                </div>
+                {showPricing && (
+                  <>
+                    <Select wrapperClassName="col-span-12 sm:col-span-6" label="Pricing structure" options={PRICING_STRUCTURES} value={pricing} onChange={(e) => setPricing(e.target.value)} />
+                    <Select wrapperClassName="col-span-6 sm:col-span-6" label="Pricing effective date" options={priceDates((input.PricingEffectiveDate ?? '').slice(0, 10))} value={(input.PricingEffectiveDate ?? '').slice(0, 10)} onChange={(e) => set(['PricingEffectiveDate'], e.target.value)} />
+                    <NumberInput wrapperClassName="col-span-6 sm:col-span-6" label="Target margin" suffix="%" step="0.5" min={0} max={90} value={Math.round(margin * 1000) / 10} onChange={(e) => setMargin((Number(e.target.value) || 0) / 100)} />
+                    <Input wrapperClassName="col-span-6 sm:col-span-6" label="Approx install date" type="date" value={(input.rebateEffectiveDate ?? '').slice(0, 10)} onChange={(e) => set(['rebateEffectiveDate'], e.target.value)} />
+                  </>
+                )}
               </FormGrid>
             </CardBody>
           </Card>
 
           {type === 'hvac' && (
             <>
-              <Section title="Condenser" subtitle="The outdoor unit.">
+              <Section title="Condenser (outdoor unit)">
                 <Select wrapperClassName="col-span-12 sm:col-span-8" label="Model" required options={CATALOG.condenser} {...pick(['heatPump', 'condenser', 'model'])} />
                 <Input wrapperClassName="col-span-12 sm:col-span-4" label="Location" placeholder="e.g. North side yard" {...txt(['heatPump', 'condenser', 'location'])} />
                 <Select wrapperClassName="col-span-6 sm:col-span-4" label="Circuit length" options={CIRCUIT_LENGTH_HP} {...pick(['heatPump', 'condenser', 'electrical', 'circuitLength'])} />
@@ -376,14 +389,12 @@ export function AddSystemDrawer({
                 <Checkbox className="col-span-12 sm:col-span-4 sm:mt-6" label="GFI outlet" {...chk(['heatPump', 'condenser', 'serviceOutlet', 'enabled'])} />
               </Section>
 
-              <Section title="Indoor units" subtitle="Ducted air handlers and ductless heads.">
+              <Section title="Indoor units" subtitle="Air handlers are ducted; mini-splits are ductless heads.">
                 <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Air handlers" min={0} max={6} value={input.heatPump.ahu.count} onChange={(e) => setAhuCount(Math.max(0, Math.min(6, Number(e.target.value) || 0)))} />
                 <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Mini-splits" min={0} max={8} value={input.heatPump.miniSplit.count} onChange={(e) => setMsCount(Math.max(0, Math.min(8, Number(e.target.value) || 0)))} />
-              </Section>
-
               {units >= 2 && (
-                <Section title="Branch boxes" subtitle="Multi-unit systems connect through branch boxes or joints.">
-                  <div className="col-span-12 flex flex-wrap items-center gap-x-6 gap-y-2">
+                <>
+                  <div className="col-span-12 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line pt-3">
                     <Checkbox label="Advanced branch boxes" hint="Calculate the boxes for these units instead of the default" checked={bbMode !== 'off'} onChange={(e) => setBbMode(e.target.checked ? 'auto' : 'off')} />
                     {bbMode !== 'off' && <Checkbox label="Choose the boxes myself" checked={bbMode === 'manual'} onChange={(e) => setBbMode(e.target.checked ? 'manual' : 'auto')} />}
                   </div>
@@ -400,8 +411,9 @@ export function AddSystemDrawer({
                       {bb.branchBoxes.length === 0 ? <p className="mt-1 text-ink-3">No branch boxes needed.</p> : <ul className="mt-1 list-disc pl-5 text-ink-2">{bb.branchBoxes.map((x) => <li key={String(x.id)}>{x.name}</li>)}</ul>}
                     </div>
                   )}
-                </Section>
+                </>
               )}
+              </Section>
 
               {input.heatPump.ahu.units.map((u, i) => {
                 const base: Path = ['heatPump', 'ahu', 'units', i]

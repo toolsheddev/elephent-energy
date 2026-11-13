@@ -124,14 +124,14 @@ export function ProposalTab({ bundle: b }: { bundle: ProjectBundle }) {
               <Button icon={<Printer className="size-4" />} onClick={() => window.print()} disabled={!hasSystems}>Print preview</Button>
               <Button icon={<Download className="size-4" />} disabled={!hasSystems} onClick={() => toast.success('PDF generated', 'In the live build this calls the proposal service and returns a signed URL.')}>Download PDF</Button>
               {proposal.status === 'out for signature' ? (
-                <Button loading={upd.isPending} onClick={() => upd.mutate({ proposalId: proposal.id, patch: { status: 'pending' } }, { onSuccess: () => toast.success('Signature request cancelled', 'The proposal is pending again.') })}>Cancel signature request</Button>
+                <Button loading={upd.isPending} onClick={() => upd.mutate({ proposalId: proposal.id, patch: { status: 'pending' } }, { onSuccess: () => toast.success('Signature request cancelled', 'The proposal is pending again.') })}>Cancel signature</Button>
               ) : (
                 <Button variant="primary" icon={<FileSignature className="size-4" />} loading={upd.isPending} disabled={!hasSystems || locked}
                   onClick={() => upd.mutate({ proposalId: proposal.id, patch: { status: 'out for signature' } }, { onSuccess: () => toast.success('Sent for signature', `${b.project.email} (sample: no e-signature service is connected)`) })}>Send for signature</Button>
               )}
               <Button icon={<Send className="size-4" />} loading={upd.isPending} disabled={!hasSystems || locked || proposal.status === 'out for signature'}
                 title={proposal.status === 'out for signature' ? 'Customer has already selected a proposal for signature' : undefined}
-                onClick={() => upd.mutate({ proposalId: proposal.id, patch: { status: 'out for review' } }, { onSuccess: () => toast.success('Numbers sent', 'The proposal is now out for review (sample: no email is sent).') })}>Send the numbers</Button>
+                onClick={() => upd.mutate({ proposalId: proposal.id, patch: { status: 'out for review' } }, { onSuccess: () => toast.success('Numbers sent', 'The proposal is now out for review (sample: no email is sent).') })}>Send numbers</Button>
             </div>
           </CardBody>
         </Card>

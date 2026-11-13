@@ -1,11 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
-import { Check, ChevronDown, ChevronRight, LayoutGrid, RotateCcw, Search } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, LayoutGrid, Search } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, Outlet, useMatch } from 'react-router-dom'
+import { Link, Outlet, useMatch, useNavigate } from 'react-router-dom'
 import { Toaster, toast } from '@/components/ui/overlay'
 import { QuickJump } from './QuickJump'
-import { api } from '@/lib/api'
+import { api, type SessionUser } from '@/lib/api'
+import { MoreMenu } from '@/components/ui/menu'
+import { supabase } from '@/lib/supabase'
 import { useProject } from '@/lib/hooks'
 
 /* Same menus as the Retool navigation bar (parent/child structure read from the Navigation Bar module). */
@@ -119,8 +121,12 @@ function Breadcrumbs() {
   )
 }
 
+const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join('')
+
 export function AppShell() {
   const qc = useQueryClient()
+  const me = qc.getQueryData<SessionUser>(['me'])
+  const nav = useNavigate()
   const [jump, setJump] = useState(false)
   useEffect(() => {
     const key = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setJump((o) => !o) } }
@@ -145,19 +151,26 @@ export function AppShell() {
           >
             <Search className="size-4" /> Jump to a project <kbd className="ml-auto rounded border border-line px-1.5 py-0.5 text-[11px] font-semibold">Ctrl K</kbd>
           </button>
-          <button
-            type="button" title="Restore the sample data set" aria-label="Reset demo data"
-            onClick={async () => { await api.resetDemo(); await qc.invalidateQueries(); toast.success('Demo data reset') }}
-            className="flex size-10 cursor-pointer items-center justify-center rounded-lg text-ink-3 hover:bg-sunken hover:text-ink"
-          >
-            <RotateCcw className="size-4" />
-          </button>
-          <div className="flex items-center gap-2.5 border-l border-line pl-4">
-            <div className="flex size-9 items-center justify-center rounded-full bg-brand-100 text-[12px] font-bold text-brand-700">AT</div>
-            <div className="hidden leading-tight xl:block">
-              <p className="text-[13px] font-semibold">Allison Toth</p>
-              <p className="text-[11px] text-ink-3">Home Comfort Advisor</p>
-            </div>
+          <div className="border-l border-line pl-3">
+            <MoreMenu
+              label="Account"
+              trigger={
+                <button type="button" aria-label={`Account: ${me?.name ?? ''}`} className="flex cursor-pointer items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-sunken">
+                  <span className="flex size-9 items-center justify-center rounded-full bg-brand-100 text-[12px] font-bold text-brand-700">{initials(me?.name ?? '')}</span>
+                  <span className="hidden text-left leading-tight xl:block">
+                    <span className="block text-[13px] font-semibold">{me?.name}</span>
+                    <span className="block text-[11px] text-ink-3">{me?.role === 'admin' ? 'Admin' : 'User'} · {me?.email}</span>
+                  </span>
+                  <ChevronDown className="size-4 text-ink-3" />
+                </button>
+              }
+              items={[
+                me?.role === 'admin' && { label: 'Team', onSelect: () => nav('/team') },
+                me?.role === 'admin' && { label: 'Reset demo data', onSelect: async () => { await api.resetDemo(); await qc.invalidateQueries(); toast.success('Demo data reset') }, hint: 'Wipes the projects and loads the sample set again' },
+                me?.role === 'admin' && { kind: 'separator' },
+                { label: 'Sign out', onSelect: async () => { await supabase?.auth.signOut(); window.location.assign('/') } },
+              ]}
+            />
           </div>
         </div>
       </header>

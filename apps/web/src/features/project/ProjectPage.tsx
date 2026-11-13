@@ -108,7 +108,7 @@ function OverviewView({ b, go }: { b: ProjectBundle; go: (v: ViewId, extra?: Rec
           ) : (
             <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
               <span className="inline-flex items-center gap-2 text-[13.5px] text-ok"><CheckCircle2 className="size-4" /> Nothing missing</span>
-              <Button size="sm" variant="primary" onClick={() => go('design')}>Go to Options and pricing</Button>
+              <Button size="sm" variant="primary" onClick={() => go('design')}>Options and pricing</Button>
             </div>
           )}
         </Card>
@@ -208,10 +208,7 @@ export function ProjectPage() {
               )}
               {view === 'financing' && <FinancingSection />}
               {view === 'invoices' && (
-                <div className="space-y-3">
-                  {(b.invoices?.length ?? 0) > 0 && <div className="flex justify-end"><Button onClick={() => setHearOpen(true)}>Open HEAR Info</Button></div>}
-                  <InvoicesTab bundle={b} />
-                </div>
+                <InvoicesTab bundle={b} onHearInfo={() => setHearOpen(true)} />
               )}
               {view === 'handoff' && <div className="space-y-4"><HandoffSection /><StatusCard bundle={b} /></div>}
             </div>

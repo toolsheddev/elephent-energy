@@ -88,6 +88,20 @@ create table if not exists users (                                          -- A
   id   integer primary key,
   name text not null
 );
+-- APP: sign-in. Accounts are Supabase Auth users; this table keeps the app's role and blocked flag, linked by auth_user_id.
+-- Roles: 'admin' (can manage the team) and 'user'. (password_hash is no longer used.)
+alter table users add column if not exists email text;
+alter table users add column if not exists password_hash text;
+alter table users add column if not exists role text not null default 'user';
+alter table users alter column role set default 'user';
+update users set role = 'user' where role = 'staff';
+-- pending: the person made a Supabase account nobody invited; an admin approves them on the Team page
+alter table users add column if not exists pending boolean not null default false;
+alter table users add column if not exists active boolean not null default true;
+alter table users add column if not exists last_login_at timestamptz;
+create unique index if not exists users_email_key on users (lower(email));
+alter table users add column if not exists auth_user_id uuid;
+create unique index if not exists users_auth_user_key on users (auth_user_id);
 
 create table if not exists projects_new (                                   -- [seen: projects_new.csv]
   id                        integer primary key,
@@ -477,3 +491,77 @@ create table if not exists timestamps_new (                                 -- [
   changed_by_user text, field_name text, inspection_id integer, invoice_id integer, line_item_id integer, market text, new_value text, notes text,
   previous_value text, project_id integer, rebate_id integer, source text, system_id integer, "timestamp" timestamptz
 );
+
+-- Security: the browser holds Supabase's publishable key, which can reach every table in "public" through Supabase's REST API.
+-- RLS on with no policies means the browser roles (anon, authenticated) can read or change nothing here.
+-- The app's API connects as the table owner, which RLS does not restrict, so the app itself is unaffected.
+do $$
+declare t record;
+begin
+  for t in select c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity loop
+    execute format('alter table public.%I enable row level security', t.relname);
+  end loop;
+end $$;
+
+-- Supabase Auth -> users table, kept in step by the database itself:
+--   account created  -> a users row with role 'user'. If an admin already invited that email, the account is linked to that row
+--                       (and keeps the role the admin chose). Anyone else starts pending until an admin approves them.
+--   email changed    -> the users row gets the new email.
+--   account deleted  -> access removed; the name stays because projects may list the person as project manager.
+-- Only runs where Supabase's auth schema exists (skipped on a plain local Postgres).
+create or replace function public.handle_auth_user_created() returns trigger
+language plpgsql security definer set search_path = public as $$
+declare existing integer;
+begin
+  if new.email is null then return new; end if;
+  select id into existing from public.users where lower(email) = lower(new.email) limit 1;
+  if existing is not null then
+    update public.users set auth_user_id = new.id where id = existing;
+  else
+    insert into public.users (id, name, email, role, active, pending, auth_user_id)
+    values (nextval('app_id_seq'),
+            coalesce(nullif(new.raw_user_meta_data->>'full_name', ''), nullif(new.raw_user_meta_data->>'name', ''), split_part(new.email, '@', 1)),
+            lower(new.email), 'user', false, true, new.id);
+  end if;
+  return new;
+end $$;
+
+create or replace function public.handle_auth_user_email_changed() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.email is not null and not exists (select 1 from public.users where lower(email) = lower(new.email) and auth_user_id is distinct from new.id) then
+    update public.users set email = lower(new.email) where auth_user_id = new.id;
+  end if;
+  return new;
+end $$;
+
+create or replace function public.handle_auth_user_deleted() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.users set email = null, auth_user_id = null, active = false, pending = false, role = 'user' where auth_user_id = old.id;
+  return old;
+end $$;
+
+-- trigger functions are not meant to be called through Supabase's API
+revoke all on function public.handle_auth_user_created() from public, anon, authenticated;
+revoke all on function public.handle_auth_user_email_changed() from public, anon, authenticated;
+revoke all on function public.handle_auth_user_deleted() from public, anon, authenticated;
+
+do $$
+begin
+  if to_regclass('auth.users') is null then return; end if;
+  execute 'create or replace trigger on_auth_user_created after insert on auth.users for each row execute function public.handle_auth_user_created()';
+  execute 'create or replace trigger on_auth_user_email_changed after update of email on auth.users for each row when (old.email is distinct from new.email) execute function public.handle_auth_user_email_changed()';
+  execute 'create or replace trigger on_auth_user_deleted after delete on auth.users for each row execute function public.handle_auth_user_deleted()';
+  -- accounts made before the trigger existed: link them, or add them as pending
+  update public.users u set auth_user_id = a.id from auth.users a
+   where u.auth_user_id is null and a.email is not null and lower(u.email) = lower(a.email)
+     and not exists (select 1 from public.users x where x.auth_user_id = a.id);
+  insert into public.users (id, name, email, role, active, pending, auth_user_id)
+  select nextval('app_id_seq'),
+         coalesce(nullif(a.raw_user_meta_data->>'full_name', ''), nullif(a.raw_user_meta_data->>'name', ''), split_part(a.email, '@', 1)),
+         lower(a.email), 'user', false, true, a.id
+    from auth.users a
+   where a.email is not null
+     and not exists (select 1 from public.users u where u.auth_user_id = a.id or lower(u.email) = lower(a.email));
+end $$;

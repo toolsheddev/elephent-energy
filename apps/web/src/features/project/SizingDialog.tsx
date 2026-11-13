@@ -40,7 +40,7 @@ export function SizingDialog({ open, onClose, sqFootage }: { open: boolean; onCl
           <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Design temperature" suffix="°F" value={designTemp} onChange={(e) => setDesignTemp(e.target.value)} />
           {sqFootage ? (
             <div className="col-span-12 sm:col-span-6">
-              <Button className="w-full sm:w-auto" onClick={() => setLoad(String(Math.round(sqFootage * 25)))}>Use a rough estimate ({(sqFootage * 25).toLocaleString()} BTU/hr)</Button>
+              <Button className="w-full sm:w-auto" onClick={() => setLoad(String(Math.round(sqFootage * 25)))}>Use estimate ({(sqFootage * 25).toLocaleString()} BTU/hr)</Button>
             </div>
           ) : null}
         </div>

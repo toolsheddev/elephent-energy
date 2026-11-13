@@ -1,7 +1,8 @@
 import clsx from 'clsx'
-import { BadgeCheck, CheckCircle2, ExternalLink, FileText, Pencil, ReceiptText, Send, Trash2 } from 'lucide-react'
+import { BadgeCheck, CheckCircle2, ExternalLink, FileText, Pencil, ReceiptText, Send } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useView } from './views'
+import { MoreMenu } from '@/components/ui/menu'
 import { Banner, Button, Card, CardBody, CardHeader, EmptyState, StatusPill } from '@/components/ui/core'
 import { NumberInput, Segmented, Switch, Textarea } from '@/components/ui/form'
 import { Modal, toast } from '@/components/ui/overlay'
@@ -22,7 +23,7 @@ const DEPOSIT_CHOICES: { value: string; label: string; sub?: string }[] = [
   { value: 'custom', label: 'Custom amount' },
 ]
 
-export function InvoicesTab({ bundle: b }: { bundle: ProjectBundle }) {
+export function InvoicesTab({ bundle: b, onHearInfo }: { bundle: ProjectBundle; onHearInfo?: () => void }) {
   const invoices = b.invoices ?? []
   const { go } = useView()
 
@@ -33,7 +34,7 @@ export function InvoicesTab({ bundle: b }: { bundle: ProjectBundle }) {
       <Card>
         <EmptyState
           icon={<ReceiptText className="size-5" />} title={designed ? 'Finalize a proposal first' : 'Design a system first'}
-          action={<Button variant="primary" onClick={() => go('design')}>Go to Options and pricing</Button>}
+          action={<Button variant="primary" onClick={() => go('design')}>Options and pricing</Button>}
         >
           {designed
             ? `Invoices are built from the finalized proposal. ${pending ? 'Pick the option you want under Options and pricing and press Finalize in the panel on the right.' : 'Create an option under Options and pricing and press Finalize.'}`
@@ -43,7 +44,7 @@ export function InvoicesTab({ bundle: b }: { bundle: ProjectBundle }) {
     )
   }
   if (invoices.length === 0) return <GenerateInvoices bundle={b} />
-  return <InvoiceViewer bundle={b} />
+  return <InvoiceViewer bundle={b} onHearInfo={onHearInfo} />
 }
 
 /* ------------------------------------------------------------------ */
@@ -141,7 +142,7 @@ function GenerateInvoices({ bundle: b }: { bundle: ProjectBundle }) {
 
 const INVOICE_ORDER = ['First Deposit', 'Second Deposit', 'Final Invoice']
 
-function InvoiceViewer({ bundle: b }: { bundle: ProjectBundle }) {
+function InvoiceViewer({ bundle: b, onHearInfo }: { bundle: ProjectBundle; onHearInfo?: () => void }) {
   const del = useDeleteInvoices(b.project.id)
   const invoices = [...b.invoices].sort((x, y) => INVOICE_ORDER.indexOf(x.invoice_type) - INVOICE_ORDER.indexOf(y.invoice_type))
   const [sel, setSel] = useState<number>(invoices[0]?.id)
@@ -165,7 +166,13 @@ function InvoiceViewer({ bundle: b }: { bundle: ProjectBundle }) {
             </button>
           ))}
         </div>
-        <Button size="sm" variant="danger" className="ml-auto" icon={<Trash2 className="size-4" />} onClick={() => setConfirm(true)}>Delete invoices</Button>
+        <div className="ml-auto">
+          <MoreMenu label="Invoice actions" items={[
+            onHearInfo && { label: 'HEAR info', onSelect: onHearInfo },
+            onHearInfo && { kind: 'separator' },
+            { label: 'Delete invoices', onSelect: () => setConfirm(true), danger: true },
+          ]} />
+        </div>
       </div>
 
       <InvoiceView key={invoice.id} bundle={b} invoice={invoice} />
@@ -199,6 +206,7 @@ function InvoiceView({ bundle: b, invoice }: { bundle: ProjectBundle; invoice: I
   const [memo, setMemo] = useState(invoice.memo)
   const [footer, setFooter] = useState(invoice.footer)
   const [notes, setNotes] = useState(invoice.notes)
+  const [showNotes, setShowNotes] = useState(() => !!(invoice.memo || invoice.footer || invoice.notes))
   useEffect(() => { setMemo(invoice.memo); setFooter(invoice.footer); setNotes(invoice.notes) }, [invoice.memo, invoice.footer, invoice.notes])
   const dirty = memo !== invoice.memo || footer !== invoice.footer || notes !== invoice.notes
 
@@ -270,12 +278,19 @@ function InvoiceView({ bundle: b, invoice }: { bundle: ProjectBundle; invoice: I
         </div>
 
         <CardBody className="space-y-4">
-          <Textarea label="Footer" rows={4} value={footer} onChange={(e) => setFooter(e.target.value)} hint="Printed at the bottom of the invoice, for example incentives paid directly to the customer." />
+          <button type="button" onClick={() => setShowNotes((v) => !v)} aria-expanded={showNotes}
+            className="flex w-full cursor-pointer items-center justify-between rounded-md bg-canvas px-3 py-2 text-left text-[13px] hover:bg-sunken">
+            <span><span className="font-semibold">Notes on this invoice</span> <span className="text-ink-3">· footer, memo, internal notes{[footer, memo, notes].filter((x) => x.trim()).length ? ` (${[footer, memo, notes].filter((x) => x.trim()).length} filled)` : ''}</span></span>
+            <span className="font-semibold text-brand-700">{showNotes ? 'Hide' : 'Show'}</span>
+          </button>
+          {showNotes && <>
+          <Textarea label="Footer" rows={3} value={footer} onChange={(e) => setFooter(e.target.value)} hint="Printed at the bottom of the invoice, for example incentives paid directly to the customer." />
           <Textarea label="Memo" rows={2} value={memo} onChange={(e) => setMemo(e.target.value)} />
           <Textarea label="Internal notes" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} hint="Never shown to the customer." />
           <div className="flex justify-end">
-            <Button variant="primary" disabled={!dirty} loading={update.isPending} onClick={async () => { await update.mutateAsync({ invoiceId: invoice.id, patch: { memo, footer, notes } }); toast.success('Invoice saved') }}>Save changes</Button>
+            <Button variant="primary" disabled={!dirty} loading={update.isPending} onClick={async () => { await update.mutateAsync({ invoiceId: invoice.id, patch: { memo, footer, notes } }); toast.success('Invoice saved') }}>Save</Button>
           </div>
+          </>}
         </CardBody>
       </Card>
 
@@ -328,7 +343,7 @@ function InvoiceView({ bundle: b, invoice }: { bundle: ProjectBundle; invoice: I
             </dl>
 
             {invoice.invoice_status === 'not sent' && !approved && (
-              <Button className="w-full" icon={<BadgeCheck className="size-4" />} onClick={() => setApproveOpen(true)}>Approve invoice</Button>
+              <Button className="w-full" icon={<BadgeCheck className="size-4" />} onClick={() => setApproveOpen(true)}>Approve</Button>
             )}
             {invoice.invoice_status === 'not sent' && (
               <span className="block" title={!approved ? 'Approve the invoice first' : !isApprover ? 'Only the Approver group can send' : undefined}>
@@ -340,15 +355,15 @@ function InvoiceView({ bundle: b, invoice }: { bundle: ProjectBundle; invoice: I
             )}
             {invoice.invoice_status === 'open' && (
               <>
-                <Button className="w-full" icon={<ExternalLink className="size-4" />} onClick={() => toast.success('Stripe invoice link', 'Sample link; the live system opens the hosted invoice page.')}>Stripe invoice link</Button>
-                <Button className="w-full" icon={<CheckCircle2 className="size-4" />} onClick={async () => { await status.mutateAsync({ invoiceId: invoice.id, status: 'paid' }); toast.success('Marked paid (demo)') }}>Mark paid (demo)</Button>
-                <Button className="w-full" variant="danger" onClick={async () => { await status.mutateAsync({ invoiceId: invoice.id, status: 'void' }); toast.success('Invoice voided in Stripe') }}>Void invoice in Stripe</Button>
+                <Button className="w-full" icon={<ExternalLink className="size-4" />} onClick={() => toast.success('Stripe invoice link', 'Sample link; the live system opens the hosted invoice page.')}>Open in Stripe</Button>
+                <Button className="w-full" icon={<CheckCircle2 className="size-4" />} onClick={async () => { await status.mutateAsync({ invoiceId: invoice.id, status: 'paid' }); toast.success('Marked paid (demo)') }}>Mark paid</Button>
+                <Button className="w-full" variant="danger" onClick={async () => { await status.mutateAsync({ invoiceId: invoice.id, status: 'void' }); toast.success('Invoice voided in Stripe') }}>Void invoice</Button>
               </>
             )}
             {invoice.invoice_status === 'paid' && <Banner tone="ok" title="Paid">Paid {invoice.paid_at ? new Date(invoice.paid_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''}.</Banner>}
             {invoice.invoice_status === 'void' && <Banner tone="warn" title="Voided">Apply settings to rebuild it, or generate new invoices.</Banner>}
             {invoice.invoice_type === 'First Deposit' && (
-              <Button className="w-full" icon={<Pencil className="size-4" />} onClick={() => setDepositOpen(true)}>Edit deposit amount</Button>
+              <Button className="w-full" icon={<Pencil className="size-4" />} onClick={() => setDepositOpen(true)}>Edit deposit</Button>
             )}
           </CardBody>
         </Card>

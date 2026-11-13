@@ -71,7 +71,7 @@ export function ProjectForm({ bundle, children }: { bundle: ProjectBundle; child
             </p>
             <div className="flex gap-2">
               <Button icon={<Undo2 className="size-4" />} onClick={() => reset(defaults)} disabled={!isDirty}>Discard</Button>
-              <Button variant="primary" type="submit" icon={<Save className="size-4" />} loading={isSubmitting} disabled={!isDirty}>Save changes</Button>
+              <Button variant="primary" type="submit" icon={<Save className="size-4" />} loading={isSubmitting} disabled={!isDirty}>Save</Button>
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@ export function CustomerSection() {
           />
           <Select wrapperClassName="col-span-12 sm:col-span-6 lg:col-span-3" label="Interest in maintenance" options={O.MAINTENANCE_INTEREST} {...register('project.maintenance_interest', { setValueAs: (v) => v || 'Unknown' })} />
           <div className="col-span-12 flex flex-wrap gap-2 lg:col-span-6">
-            <Button type="button" variant="primary" disabled title="Opens the customer's Google Drive folder. The folder link comes from Salesforce, which is not connected yet.">Open Project Folder</Button>
+            <Button type="button" variant="primary" disabled title="Opens the customer's Google Drive folder. The folder link comes from Salesforce, which is not connected yet.">Open folder</Button>
             <Button type="button" disabled={!gasUtil || !elecUtil || !(systemsInterest ?? []).length} onClick={() => setRequestOpen(true)}
               title={!gasUtil || !elecUtil || !(systemsInterest ?? []).length ? 'Pick the gas and electric utility (Home section) and at least one prospective system first' : undefined}>Request bills &amp; photos</Button>
           </div>

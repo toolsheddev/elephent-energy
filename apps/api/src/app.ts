@@ -1,6 +1,8 @@
 import cors from '@fastify/cors'
 import Fastify from 'fastify'
 import { setRefData } from '@sd/domain/engine'
+import { registerAuth, requireAdmin } from './auth'
+import { registerTeam } from './team'
 import { migrate, pool } from './db'
 import { listBaseDesigns } from './basedesigns'
 import { createProject, deleteProject, type NewProjectInput } from './projects'
@@ -18,13 +20,31 @@ export async function buildApp() {
   setRefData(ref)
 
   const app = Fastify({ logger: { level: 'warn' }, bodyLimit: 8 * 1024 * 1024 })
-  await app.register(cors, { origin: true, methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] })
+  // Cookies cross origins only for: the site itself, localhost (development), and origins listed in CORS_ORIGINS (comma separated)
+  const extra = (process.env.CORS_ORIGINS ?? '').split(',').map((x) => x.trim()).filter(Boolean)
+  await app.register(cors, {
+    delegator: (req, cb) => {
+      const origin = req.headers.origin
+      let ok = !origin
+      if (origin) {
+        try {
+          const u = new URL(origin)
+          ok = u.host === req.headers.host || u.hostname === 'localhost' || u.hostname === '127.0.0.1' || extra.includes(origin)
+        } catch { ok = false }
+      }
+      cb(null, { origin: ok ? origin ?? false : false, credentials: true, methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] })
+    },
+  })
 
   app.setErrorHandler((err: Error, _req, reply) => {
-    const status = err instanceof NotFound ? 404 : 400
+    const code = (err as { statusCode?: number }).statusCode
+    const status = err instanceof NotFound ? 404 : code === 401 || code === 403 || code === 429 ? code : 400
     if (status === 400) app.log.error(err)
     reply.status(status).send({ error: err.message })
   })
+
+  registerAuth(app)
+  registerTeam(app)
 
   app.get('/api/health', async () => ({ ok: true, projects: (await pool.query('select count(*)::int n from projects_new')).rows[0].n }))
   app.get('/api/refdata', async () => ref)
@@ -58,7 +78,8 @@ export async function buildApp() {
     const value = await perform(Number(req.params.id), req.params.action, req.body?.args ?? [])
     return { value: value ?? null }
   })
-  app.post('/api/admin/reset', async () => { await seedProjects(); return { value: true } })
+  // Wipes and reseeds the demo data: admins only
+  app.post('/api/admin/reset', async (req) => { requireAdmin(req); await seedProjects(); return { value: true } })
 
   return app
 }

@@ -51,7 +51,7 @@ export function UtilityRequestDialog({ open, onClose, projectId }: { open: boole
   return (
     <Modal
       open={open} onOpenChange={(o) => !o && onClose()} title="Request bills and photos" description="Ask the customer for what is needed to size the system." size="md"
-      footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!kind} loading={busy} onClick={submit}>Submit Request</Button></>}
+      footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!kind} loading={busy} onClick={submit}>Submit</Button></>}
     >
       <div className="space-y-4">
         <ul className="list-disc space-y-1.5 pl-5 text-[14px] text-ink-2">

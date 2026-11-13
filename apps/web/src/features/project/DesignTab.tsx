@@ -1,12 +1,13 @@
 import type { ColumnDef } from '@tanstack/react-table'
 import clsx from 'clsx'
 import {
-  Calculator, Download, Pencil, Plus, RefreshCw, Sparkles, Thermometer, Trash2 } from 'lucide-react'
+  Calculator, Pencil, Plus, Sparkles, Thermometer, Trash2 } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { MoreMenu } from '@/components/ui/menu'
 import { Badge, Banner, Button, Card, CardHeader, EmptyState, IconButton } from '@/components/ui/core'
-import { Checkbox, Input, NumberInput, Select, Switch, Textarea } from '@/components/ui/form'
+import { Checkbox, Input, NumberInput, Select, Textarea } from '@/components/ui/form'
 import { Drawer, Modal, toast } from '@/components/ui/overlay'
 import { DataTable } from '@/components/ui/table'
 import { money, proposalTotals, readiness, systemTotals } from '@/lib/calc'
@@ -93,7 +94,7 @@ export function DesignTab({ bundle: b }: { bundle: ProjectBundle }) {
       <Card>
         <EmptyState
           icon={<Sparkles className="size-5" />} title="No proposal yet"
-          action={<Button variant="primary" icon={<Plus className="size-4" />} loading={createProposal.isPending} onClick={() => createProposal.mutate('Proposal 1')}>Create first proposal</Button>}
+          action={<Button variant="primary" icon={<Plus className="size-4" />} loading={createProposal.isPending} onClick={() => createProposal.mutate('Proposal 1')}>New option</Button>}
         >
           A proposal holds the systems you design for this home. Create one to start adding a heat pump, water heater or electrical work.
         </EmptyState>
@@ -182,17 +183,17 @@ export function DesignTab({ bundle: b }: { bundle: ProjectBundle }) {
       ),
     }),
     ...(extraCols.has('qty') ? [col({ id: 'qty', header: 'Qty', size: 60, meta: { align: 'right' }, accessorFn: (r) => r.quantity, cell: text((r) => r.quantity) })] : []),
-    col({
+    ...(extraCols.has('location') ? [col({
       id: 'location', header: 'Location', size: 150, accessorFn: (r) => r.location ?? '',
       cell: ({ row: { original: r } }) => <InlineText value={r.location ?? ''} placeholder="—" label={`Location of line ${r.id}`} onSave={(v) => saveLine(r, { location: v || undefined })} />,
-    }),
-    col({
-      id: 'circuit', header: 'Circuit detail', size: 104, accessorFn: (r) => r.circuit ?? '',
+    })] : []),
+    ...(lines.some((l) => l.circuit) ? [col({
+      id: 'circuit', header: 'Circuit', size: 104, accessorFn: (r) => r.circuit ?? '',
       cell: ({ row: { original: r } }) => (isCircuitLine(r) && r.circuit && b.project.finalized_proposal_id !== proposal.id ? (
         <button type="button" title="Edit circuit length" onClick={(e) => { e.stopPropagation(); setCircuitFor(r) }}
           className="block max-w-full cursor-pointer truncate rounded text-left font-medium text-brand-700 underline decoration-dotted underline-offset-4 hover:text-brand-800">{r.circuit}</button>
       ) : <span className="block truncate text-ink-2" title={r.circuit ?? ''}>{r.circuit ?? ''}</span>),
-    }),
+    })] : []),
     ...(hvacFocused && lines.some((l) => l.assigned_units) ? [col({ id: 'assigned', header: 'Assigned units', size: 96, accessorFn: (r) => r.assigned_units ?? '', cell: text((r) => r.assigned_units) })] : []),
     ...(hvacFocused && lines.some((l) => l.branch_box) ? [col({ id: 'branch', header: 'Branch box', size: 120, accessorFn: (r) => r.branch_box ?? '', cell: text((r) => r.branch_box) })] : []),
     col({
@@ -208,11 +209,11 @@ export function DesignTab({ bundle: b }: { bundle: ProjectBundle }) {
           <span className={clsx('font-semibold', getValue<number>() < 0 && 'text-ok')}>{money(getValue<number>(), { cents: true })}</span>
         ),
     }),
-    col({
+    ...(extraCols.has('margin') ? [col({
       id: 'margin', header: 'Margin amount', size: 104, meta: { align: 'right' }, accessorFn: (r) => r.margin_amount ?? 0,
       cell: ({ row: { original: r } }) => (r.margin_amount ? <span className="text-ink-2">{money(r.margin_amount, { cents: true })}</span> : <span className="text-ink-3">—</span>),
-    }),
-    col({
+    })] : []),
+    ...(extraCols.has('show') ? [col({
       id: 'show', header: 'Show in proposal?', size: 92,
       cell: ({ row: { original: r } }) => (
         <input
@@ -222,14 +223,14 @@ export function DesignTab({ bundle: b }: { bundle: ProjectBundle }) {
           onChange={(e) => saveLine(r, { show_in_proposal: e.target.checked })}
         />
       ),
-    }),
-    col({
+    })] : []),
+    ...(lines.some((l) => (l.status ?? sysStatus(l.system_id)) !== 'proposed') ? [col({
       id: 'status', header: 'Status', size: 150, accessorFn: (r) => r.status ?? sysStatus(r.system_id),
       cell: ({ getValue }) => {
         const v = String(getValue())
         return <span title={v} className={clsx('inline-flex max-w-full rounded-full px-2 py-0.5 text-[12px] font-semibold', v === 'pending deletion' ? 'bg-rose-100 text-rose-800' : 'bg-orange-100 text-orange-800')}><span className="truncate first-letter:uppercase">{v}</span></span>
       },
-    }),
+    })] : []),
     ...(extraCols.has('equipment_id') ? [col({ id: 'equipment_id', header: 'Equipment ID', size: 88, accessorFn: (r) => r.equipment_id ?? '', cell: text((r) => r.equipment_id) })] : []),
     ...(extraCols.has('labor_id') ? [col({ id: 'labor_id', header: 'Labor ID', size: 72, accessorFn: (r) => r.labor_id ?? '', cell: text((r) => r.labor_id) })] : []),
     ...(extraCols.has('provider') ? [col({ id: 'provider', header: 'Provider', size: 88, accessorFn: (r) => r.equipment_provider ?? '', cell: text((r) => r.equipment_provider) })] : []),
@@ -283,37 +284,29 @@ export function DesignTab({ bundle: b }: { bundle: ProjectBundle }) {
           ) : (
           /* Line items: everything in the proposal by default; click a system row or a chip to focus one system */
           <Card>
-            <CardHeader
-              title={<>Line items <span className="font-medium text-ink-3">- {system ? `${system.nickname || system.system_type} (${system.id})` : `${proposal.nickname}, all systems`}</span></>}
-              subtitle={system?.system_type === 'other' ? "Permits are calculated from the home's jurisdiction and the other systems in this proposal." : 'Equipment, labor, permits and incentives. Pick a system below, or click a row in the table above, to focus on one.'}
-              actions={
-                <>
-                  <Button size="sm" onClick={() => setIncentivesOpen(true)}>Analyze Incentives</Button>
-                  <Button size="sm" icon={<Calculator className="size-4" />} disabled={!canRecalc} loading={recalculate.isPending} onClick={recalc}>{system ? 'Recalculate' : 'Recalculate all'}</Button>
-                </>
-              }
-            />
-            <div className="flex flex-wrap gap-1.5 border-b border-line px-5 py-3" role="group" aria-label="Show line items for">
-              {[{ id: null as number | null, label: 'All systems', n: allLines.length }, ...ordered.map((sy) => ({ id: sy.id as number | null, label: nameOf(sy.id), n: b.lineItems.filter((l) => l.system_id === sy.id).length }))].map((c) => {
-                const on = (system?.id ?? null) === c.id
-                return (
-                  <button key={String(c.id)} type="button" aria-pressed={on} onClick={() => setSystemId(c.id)}
-                    className={clsx('inline-flex max-w-64 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-semibold transition-colors', on ? 'bg-brand-600 text-white' : 'bg-sunken text-ink-2 hover:bg-brand-50 hover:text-brand-700')}>
-                    <span className="truncate">{c.label}</span><span className={clsx('num text-xs', on ? 'text-brand-200' : 'text-ink-3')}>{c.n}</span>
-                  </button>
-                )
-              })}
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-canvas/50 px-5 py-2">
-              <p className="text-[13px] text-ink-3">{selected.size > 0 ? `${selected.size} selected` : `${lines.length} line items`}</p>
-              <div className="flex flex-wrap items-center gap-2">
-                <Switch label="Advanced edit" checked={advanced} onChange={setAdvanced} className="mr-2" />
-                <Button size="sm" icon={<Plus className="size-4" />} disabled={systems.every((x) => x.system_type === 'other')} onClick={() => setAddOpen(true)}>Add line items</Button>
-                <Button size="sm" variant="danger" icon={<Trash2 className="size-4" />} disabled={deleteDisabled} onClick={() => (b.project.finalized_proposal_id === proposal.id ? setDeleteCO(true) : setConfirmDelete('lines'))}>Delete</Button>
-                <ColumnsMenu selected={extraCols} onToggle={(id) => setExtraCols((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n })} />
-                <IconButton label="Download line items as CSV" disabled={lines.length === 0} onClick={downloadCsv}><Download className="size-4" /></IconButton>
-                <IconButton label="Refresh" onClick={() => qc.invalidateQueries({ queryKey: qk.project(pid) })}><RefreshCw className="size-4" /></IconButton>
+            <div className="flex flex-wrap items-center gap-2 border-b border-line px-3 py-2.5">
+              <div className="min-w-0 flex-1 basis-60">
+                <h3 className="text-[14px] font-bold">
+                  Line items <span className="font-medium text-ink-3">· {system ? (system.system_type === 'other' ? 'Permits and other' : system.nickname || system.system_type) : 'all systems'}</span>
+                  {system && <button type="button" onClick={() => setSystemId(null)} className="ml-2 cursor-pointer text-[12.5px] font-semibold text-brand-700 hover:underline">Show all</button>}
+                </h3>
+                <p className="text-[12.5px] text-ink-3">{selected.size > 0 ? `${selected.size} selected` : `${lines.length} lines`}{system?.system_type === 'other' ? " · permits come from the home's jurisdiction and the other systems" : ''}</p>
               </div>
+              {selected.size > 0 && (
+                <Button size="sm" variant="danger" icon={<Trash2 className="size-4" />} disabled={deleteDisabled} onClick={() => (b.project.finalized_proposal_id === proposal.id ? setDeleteCO(true) : setConfirmDelete('lines'))}>Delete {selected.size}</Button>
+              )}
+              <Button size="sm" icon={<Plus className="size-4" />} disabled={systems.every((x) => x.system_type === 'other')} onClick={() => setAddOpen(true)}>Add line items</Button>
+              <Button size="sm" icon={<Calculator className="size-4" />} disabled={!canRecalc} loading={recalculate.isPending} onClick={recalc}>{system ? 'Recalculate' : 'Recalculate all'}</Button>
+              <MoreMenu label="More line item actions" items={[
+                { label: 'Analyze incentives', onSelect: () => setIncentivesOpen(true) },
+                { label: 'Download CSV', onSelect: downloadCsv, disabled: lines.length === 0 },
+                { label: 'Refresh', onSelect: () => qc.invalidateQueries({ queryKey: qk.project(pid) }) },
+                { kind: 'separator' },
+                { kind: 'check', label: 'Edit prices in the table', checked: advanced, onChange: setAdvanced },
+                { kind: 'separator' },
+                { kind: 'label', label: 'Columns' },
+                ...OPTIONAL_COLUMNS.map((c) => ({ kind: 'check' as const, label: c.label, checked: extraCols.has(c.id), onChange: () => setExtraCols((cur) => { const n = new Set(cur); if (n.has(c.id)) n.delete(c.id); else n.add(c.id); return n }) })),
+              ]} />
             </div>
             <DataTable
               dense fixed className="max-h-[560px] overflow-y-auto" data={lines} columns={lineColumns} getRowId={(r) => String(r.id)}
@@ -592,7 +585,7 @@ function QaDialog({ open, onClose, blockers, onSubmit }: { open: boolean; onClos
       description="QA reviews the proposal once these are filled in."
       footer={<>
         <Button onClick={onClose}>Cancel</Button>
-        <Button variant="primary" disabled={blockers.length > 0 || !heating} loading={busy} onClick={async () => { setBusy(true); try { await onSubmit(heating) } finally { setBusy(false) } }}>Submit for QA review</Button>
+        <Button variant="primary" disabled={blockers.length > 0 || !heating} loading={busy} onClick={async () => { setBusy(true); try { await onSubmit(heating) } finally { setBusy(false) } }}>Submit for QA</Button>
       </>}
     >
       <div className="space-y-4">
@@ -615,7 +608,7 @@ function FinalizeDialog({ open, onClose, name, blockers, onConfirm }: { open: bo
   useEffect(() => { if (open) { setRisks(''); setExpect('') } }, [open])
   return (
     <Modal
-      open={open} onOpenChange={(o) => !o && onClose()} size="md" title={`Are you sure you want to finalize ${name} Proposal?`}
+      open={open} onOpenChange={(o) => !o && onClose()} size="md" title={`Finalize ${name}`}
       description="Finalizing locks this proposal. Editing its systems then needs a change order, and the Invoices tab can generate the deposit and final invoices."
       footer={<>
         <Button onClick={onClose}>Cancel</Button>
@@ -791,31 +784,9 @@ function IncentivesDialog({ open, onClose, proposal, bundle }: { open: boolean; 
 }
 
 const OPTIONAL_COLUMNS = [
+  { id: 'location', label: 'Location' }, { id: 'margin', label: 'Margin amount' }, { id: 'show', label: 'Show in proposal?' },
   { id: 'id', label: 'ID' }, { id: 'qty', label: 'Quantity' }, { id: 'equipment_id', label: 'Equipment ID' },
   { id: 'labor_id', label: 'Labor ID' }, { id: 'provider', label: 'Equipment provider' }, { id: 'manual', label: 'Manually added' },
   { id: 'adjustment', label: 'Adjustment reason' },
 ]
 
-function ColumnsMenu({ selected, onToggle }: { selected: Set<string>; onToggle: (id: string) => void }) {
-  const [open, setOpen] = useState(false)
-  useEffect(() => {
-    if (!open) return
-    const down = (e: MouseEvent) => { if (!(e.target as HTMLElement).closest('[data-columns-menu]')) setOpen(false) }
-    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('mousedown', down); document.addEventListener('keydown', key)
-    return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key) }
-  }, [open])
-  return (
-    <div className="relative" data-columns-menu>
-      <Button size="sm" aria-expanded={open} onClick={() => setOpen((o) => !o)}>Columns{selected.size ? ` (+${selected.size})` : ''}</Button>
-      {open && (
-        <div className="absolute right-0 z-30 mt-1 w-56 rounded-lg border border-line bg-surface p-2 shadow-pop" style={{ animation: 'fade-in .12s' }}>
-          <p className="px-2 pb-1 pt-0.5 text-[11px] font-bold uppercase tracking-wider text-ink-3">More columns</p>
-          {OPTIONAL_COLUMNS.map((c) => (
-            <Checkbox key={c.id} className="px-2 py-1" label={c.label} checked={selected.has(c.id)} onChange={() => onToggle(c.id)} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}

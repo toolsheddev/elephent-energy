@@ -33,7 +33,7 @@ export function NewProjectDialog({ open, onClose }: { open: boolean; onClose: ()
     <Modal
       open={open} onOpenChange={(o) => !o && onClose()} size="lg" title="New project"
       description="Creates the customer, the home and a first proposal. You can fill in the rest on the project."
-      footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!valid} loading={create.isPending} onClick={() => create.mutate()}>Create project</Button></>}
+      footer={<><Button onClick={onClose}>Cancel</Button><Button variant="primary" disabled={!valid} loading={create.isPending} onClick={() => create.mutate()}>Create</Button></>}
     >
       <div className="grid grid-cols-12 gap-4">
         <Input wrapperClassName="col-span-12 sm:col-span-6" label="First name" required value={f.firstName} onChange={set('firstName')} />

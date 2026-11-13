@@ -64,7 +64,7 @@ export function MaintenancePlanDialog({ open, onClose, bundle: b, proposal }: { 
         <Button onClick={onClose}>Cancel</Button>
         <Button disabled={!ready} onClick={() => setCalculated(true)}>Calculate</Button>
         <Button variant="primary" disabled={!result?.ok} loading={create.isPending}
-          onClick={async () => { await create.mutateAsync({ proposalId: proposal.id, level, counts: c }); toast.success('Maintenance plan added', `${level} plan, ${money(total, { cents: true })} per year`); onClose() }}>Create maintenance plan</Button>
+          onClick={async () => { await create.mutateAsync({ proposalId: proposal.id, level, counts: c }); toast.success('Maintenance plan added', `${level} plan, ${money(total, { cents: true })} per year`); onClose() }}>Create plan</Button>
       </>}
     >
       <div className="space-y-5">

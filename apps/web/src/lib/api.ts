@@ -1,3 +1,4 @@
+import { accessToken } from './supabase'
 /* HTTP client for the System Design API. Same method names the screens already use. */
 import type {
   ChangeOrderDetails, ExistingSystems, House, Invoice, InvoiceStatus, LineItemRec, Project, ProjectBundle, ProjectListItem, Proposal, SystemRec,
@@ -10,11 +11,15 @@ const BASE = ((import.meta.env.VITE_API_URL as string | undefined) ?? '').replac
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
-    res = await fetch(BASE + path, { ...init, headers: { ...(init?.body ? { 'content-type': 'application/json' } : {}), ...init?.headers } })
+    // The Supabase access token proves who is calling
+    const token = await accessToken()
+    res = await fetch(BASE + path, { ...init, headers: { ...(init?.body ? { 'content-type': 'application/json' } : {}), ...(token ? { authorization: `Bearer ${token}` } : {}), ...init?.headers } })
   } catch {
     throw new Error('Cannot reach the server. Is the API running?')
   }
   const body = await res.json().catch(() => ({}))
+  // A session that ran out (or was never there): send the person back to the sign-in page
+  if (res.status === 401 && !path.startsWith('/api/auth/')) window.dispatchEvent(new Event('sd:signed-out'))
   if (!res.ok) throw new Error(body.error ?? `Request failed (${res.status})`)
   return body as T
 }
@@ -22,7 +27,16 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 const act = async <T = true>(projectId: number, action: string, ...args: unknown[]) =>
   (await http<{ value: T }>(`/api/projects/${projectId}/${action}`, { method: 'POST', body: JSON.stringify({ args }) })).value
 
+export type Role = 'admin' | 'user'
+export interface SessionUser { id: number; name: string; email: string; role: Role }
+export interface TeamMember { id: number; name: string; email: string; role: Role; status: 'active' | 'invited' | 'pending' | 'blocked'; lastSignIn: string | null; me: boolean }
+
 export const api = {
+  me: () => http<SessionUser>('/api/auth/me'),
+  team: () => http<{ people: TeamMember[] }>('/api/team'),
+  invite: (p: { email: string; name: string; role: Role }) => http('/api/team/invite', { method: 'POST', body: JSON.stringify(p) }),
+  updateMember: (id: number, patch: { role?: Role; active?: boolean }) => http(`/api/team/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  removeMember: (id: number) => http(`/api/team/${id}`, { method: 'DELETE' }),
   refData: () => http<import('@sd/engine').RefData>('/api/refdata'),
   baseDesigns: () => http<(import('@sd/domain/baseDesign').BaseDesignRow & { odu_model: string | null; idu_model: string | null; thermostat_model: string | null })[]>('/api/base-designs'),
   resetDemo: () => http('/api/admin/reset', { method: 'POST', body: '{}' }),

@@ -77,7 +77,7 @@ export function QuotePanel({ bundle: b, className }: { bundle: ProjectBundle; cl
             </ul>
             <div className="mt-3 grid gap-2">
               <Button variant="primary" className="w-full" disabled={!hasSystems} onClick={() => ask('finalize')}>
-                {open.length ? `Finalize (${open.length} to go)` : 'Finalize proposal'}
+                Finalize
               </Button>
               <Button className="w-full" disabled={!hasSystems || proposal?.status !== 'pending'} onClick={() => ask('qa')}>Submit for QA</Button>
             </div>
