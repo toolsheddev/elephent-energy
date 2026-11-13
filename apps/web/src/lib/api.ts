@@ -4,10 +4,13 @@ import type {
 } from './types'
 import type { InvoiceOptions } from './invoicing'
 
+/** Empty in development (Vite proxies /api). On a static host, set VITE_API_URL to the deployed API, e.g. https://system-design-api.onrender.com */
+const BASE = ((import.meta.env.VITE_API_URL as string | undefined) ?? '').replace(/\/$/, '')
+
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
-    res = await fetch(path, { ...init, headers: { ...(init?.body ? { 'content-type': 'application/json' } : {}), ...init?.headers } })
+    res = await fetch(BASE + path, { ...init, headers: { ...(init?.body ? { 'content-type': 'application/json' } : {}), ...init?.headers } })
   } catch {
     throw new Error('Cannot reach the server. Is the API running?')
   }

@@ -1,0 +1,15 @@
+# Render Blueprint: the System Design API on the free plan, in Singapore (next to the Supabase database).
+services:
+  - type: web
+    name: system-design-api
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci
+    startCommand: npm run start -w @sd/api
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false   # paste the Supabase session pooler URL in the Render dashboard
+      - key: NODE_VERSION
+        value: 22

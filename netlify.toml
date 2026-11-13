@@ -1,0 +1,10 @@
+# Static front end only. The API is a separate Node service (see README, "Deploying").
+[build]
+  command = "npm run build"
+  publish = "apps/web/dist"
+
+# Single-page app: every path serves index.html (anything under /api/ is NOT rewritten, so a missing API shows as a 404, not a blank page)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

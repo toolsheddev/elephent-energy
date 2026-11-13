@@ -36,3 +36,13 @@ The web app's `src/lib/api.ts` is a thin HTTP client; catalog and prices are fet
 Schema: `apps/api/db/schema.sql`.
 
 All customers, addresses and prices in the seed are invented sample data.
+
+## Deploying (free)
+
+The front end is static (Netlify reads `netlify.toml`). The API is a Node service. `render.yaml` sets it up on Render's free plan, in the Singapore region next to the Supabase database.
+
+1. Render dashboard > New > Blueprint > pick this repo. When asked, paste `DATABASE_URL` (the Supabase session pooler URL from your `.env`). Deploy.
+2. Open `<your-service>.onrender.com/api/health`. It should show `{"ok":true,...}`.
+3. Netlify > Site settings > Environment variables: add `VITE_API_URL` = that Render URL (no trailing slash), then redeploy the site.
+
+The free plan puts the API to sleep after 15 minutes without requests, and the first request afterwards takes about 30 to 60 seconds. To avoid that, a free monitor (UptimeRobot or cron-job.org) can call `/api/health` every 10 minutes.
