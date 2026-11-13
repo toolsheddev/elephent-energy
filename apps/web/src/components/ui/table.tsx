@@ -41,8 +41,10 @@ export function DataTable<T>({
   })
 
   return (
-    <div className={clsx('overflow-x-auto', className)}>
-      <table className={clsx('w-full border-collapse text-[14px]', fixed && 'table-fixed')}>
+    <div className={clsx('overflow-x-auto rounded-[inherit]', className)}>
+      {/* A fixed layout squeezes the flexible columns to nothing when the fixed ones do not fit, and cells then paint over each other.
+          The minimum width keeps every column readable and lets the wrapper scroll sideways instead. */}
+      <table className={clsx('w-full border-collapse text-[14px]', fixed && 'table-fixed')} style={fixed ? { minWidth: columns.reduce((n, c) => n + (c.size ? c.size : 260), 0) } : undefined}>
         <thead className="sticky top-0 z-10 bg-canvas">
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>

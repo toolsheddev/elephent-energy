@@ -30,6 +30,19 @@ export async function buildApp() {
   app.get('/api/refdata', async () => ref)
   app.get('/api/projects', async () => listProjects())
   app.get('/api/base-designs', async () => listBaseDesigns())
+  // Retool: states.sql (distinct states in zipcode_mapping), counties.sql (counties of the state plus 'Not Listed'), gas_ and electric_utilities.sql
+  app.get('/api/lookups', async () => {
+    const zips = (await pool.query('select distinct state, county from zipcode_mapping where state is not null order by state, county')).rows as { state: string; county: string | null }[]
+    const utils = (await pool.query('select utility_name, is_gas, is_electrical from utilities_new order by utility_name')).rows as { utility_name: string; is_gas: boolean; is_electrical: boolean }[]
+    const countiesByState: Record<string, string[]> = {}
+    for (const z of zips) if (z.county) (countiesByState[z.state] ??= []).push(z.county)
+    return {
+      states: [...new Set(zips.map((z) => z.state))],
+      countiesByState,
+      gasUtilities: utils.filter((u) => u.is_gas).map((u) => u.utility_name),
+      electricUtilities: utils.filter((u) => u.is_electrical).map((u) => u.utility_name),
+    }
+  })
   app.get('/api/utilities', async () => (await pool.query('select utility_name, bayou_utility_name, is_gas, is_electrical from utilities_new order by utility_name')).rows)
   app.post<{ Body: NewProjectInput }>('/api/projects', async (req) => ({ id: await createProject(req.body) }))
   app.delete<{ Params: { id: string } }>('/api/projects/:id', async (req) => {

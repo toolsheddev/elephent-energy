@@ -15,9 +15,9 @@ const variants: Record<Variant, string> = {
   danger: 'border border-bad/30 bg-surface text-bad hover:bg-bad-bg disabled:text-ink-3',
 }
 const sizes: Record<Size, string> = {
-  sm: 'h-8 gap-1.5 px-3 text-[13px]',
-  md: 'h-9 gap-2 px-3.5 text-[14px]',
-  lg: 'h-11 gap-2 px-5 text-[15px]',
+  sm: 'h-7 gap-1.5 px-2.5 text-[13px]',
+  md: 'h-8 gap-1.5 px-3 text-[13.5px]',
+  lg: 'h-9 gap-2 px-4 text-[14px]',
 }
 
 export function Button({
@@ -64,7 +64,7 @@ export function IconButton({
 
 export function Card({ className, children, ...rest }: ComponentProps<'section'>) {
   return (
-    <section className={clsx('rounded-xl border border-line bg-surface shadow-card', className)} {...rest}>
+    <section className={clsx('rounded-lg border border-line bg-surface', className)} {...rest}>
       {children}
     </section>
   )
@@ -74,12 +74,12 @@ export function CardHeader({
   title, subtitle, actions, icon, className,
 }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; icon?: ReactNode; className?: string }) {
   return (
-    <header className={clsx('flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-line px-5 py-3.5', className)}>
+    <header className={clsx('flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-line px-4 py-2.5', className)}>
       <div className="flex min-w-0 items-center gap-3">
-        {icon && <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 [&>svg]:size-[18px]">{icon}</span>}
+        {icon && <span className="flex shrink-0 items-center text-ink-3 [&>svg]:size-4">{icon}</span>}
         <div className="min-w-0">
-          <h3 className="text-[15px] font-bold leading-tight tracking-tight text-ink">{title}</h3>
-          {subtitle && <p className="mt-0.5 text-[13px] text-ink-3">{subtitle}</p>}
+          <h3 className="text-[14px] font-bold leading-tight text-ink">{title}</h3>
+          {subtitle && <p className="mt-0.5 text-[12.5px] text-ink-3">{subtitle}</p>}
         </div>
       </div>
       {actions && <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div>}
@@ -88,12 +88,12 @@ export function CardHeader({
 }
 
 export function CardBody({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={clsx('p-5', className)}>{children}</div>
+  return <div className={clsx('p-4', className)}>{children}</div>
 }
 
 /** 12-column form grid; children choose their span with col-span-* classes. */
 export function FormGrid({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={clsx('grid grid-cols-12 gap-x-4 gap-y-4', className)}>{children}</div>
+  return <div className={clsx('grid grid-cols-12 gap-x-3 gap-y-3', className)}>{children}</div>
 }
 
 /* ---------- Badges ---------- */

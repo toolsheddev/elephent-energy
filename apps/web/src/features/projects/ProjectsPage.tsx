@@ -86,7 +86,7 @@ export function ProjectsPage() {
   const [advisor, setAdvisor] = useState('')
   const [creating, setCreating] = useState(false)
   const [view, setView] = useState<'cards' | 'table'>(() => {
-    try { return localStorage.getItem('sd-projects-view') === 'table' ? 'table' : 'cards' } catch { return 'cards' }
+    try { return localStorage.getItem('sd-projects-view') === 'cards' ? 'cards' : 'table' } catch { return 'table' }
   })
   const setViewSaved = (v: 'cards' | 'table') => { setView(v); try { localStorage.setItem('sd-projects-view', v) } catch { /* ignore */ } }
 
@@ -106,7 +106,7 @@ export function ProjectsPage() {
     {
       accessorKey: 'deal_title', header: 'Title',
       cell: ({ row: { original: r } }) => (
-        <span className="inline-flex min-w-72 items-center gap-2 font-semibold text-ink">
+        <span className="inline-flex min-w-72 items-center gap-2 whitespace-nowrap font-semibold text-ink">
           {r.deal_title}
           {r.blocker && <span title={r.blocker}><AlertCircle className="size-4 text-bad" aria-label={`Blocked: ${r.blocker}`} /></span>}
         </span>
@@ -125,26 +125,26 @@ export function ProjectsPage() {
   ], [])
 
   return (
-    <div className="space-y-6" style={{ animation: 'fade-in .2s' }}>
+    <div className="space-y-4" style={{ animation: 'fade-in .2s' }}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[30px] font-extrabold leading-tight tracking-tight">Projects</h1>
-          <p className="mt-1 text-[14px] text-ink-3">
+          <h1 className="text-[20px] font-extrabold leading-tight tracking-tight">Projects</h1>
+          <p className="text-[13px] text-ink-3">
             <span className="num font-semibold text-ink-2">{filtered.length.toLocaleString()}</span> {filtered.length === 1 ? 'project' : 'projects'}
             {q && <> matching “{q}”</>}
           </p>
         </div>
-        <Button variant="primary" size="lg" icon={<Plus className="size-4" />} onClick={() => setCreating(true)}>New project</Button>
+        <Button variant="primary" icon={<Plus className="size-4" />} onClick={() => setCreating(true)}>New project</Button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5" role="tablist" aria-label="Filter by stage">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-5" role="tablist" aria-label="Filter by stage">
         {FILTERS.map((f) => (
           <button
             key={f.id} type="button" role="tab" aria-selected={filter === f.id} onClick={() => setFilter(f.id)}
-            className={clsx('cursor-pointer rounded-xl border-2 px-4 py-3 text-left transition-colors', filter === f.id ? 'border-brand-600 bg-brand-50' : 'border-line bg-surface hover:border-brand-300')}
+            className={clsx('flex cursor-pointer items-baseline gap-2 rounded-md border px-3 py-2 text-left transition-colors', filter === f.id ? 'border-brand-600 bg-brand-50 shadow-[inset_0_0_0_1px_var(--color-brand-600)]' : 'border-line bg-surface hover:border-brand-300')}
           >
-            <span className={clsx('num block text-[26px] font-extrabold leading-none tracking-tight', f.tone)}>{isLoading ? '–' : counts[f.id]}</span>
-            <span className="mt-1.5 block text-[13px] font-medium text-ink-2">{f.label}</span>
+            <span className={clsx('num text-[18px] font-extrabold leading-none', f.tone)}>{isLoading ? '–' : counts[f.id]}</span>
+            <span className="text-[13px] font-medium text-ink-2">{f.label}</span>
           </button>
         ))}
       </div>
@@ -154,12 +154,12 @@ export function ProjectsPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
           <input
             type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, address, deal title…" aria-label="Search projects"
-            className="h-10 w-full rounded-lg border border-line-strong bg-surface pl-9 pr-3 text-[14px] placeholder:text-ink-3 hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-100"
+            className="h-8 w-full rounded-md border border-line-strong bg-surface pl-9 pr-3 text-[13.5px] placeholder:text-ink-3 hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-100"
           />
         </div>
         <select
           value={advisor} onChange={(e) => setAdvisor(e.target.value)} aria-label="Filter by advisor"
-          className="h-10 rounded-lg border border-line-strong bg-surface px-3 text-[14px] hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-100"
+          className="h-8 rounded-md border border-line-strong bg-surface px-2.5 text-[13.5px] hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-100"
         >
           <option value="">All advisors</option>
           {advisors.map((a) => <option key={a} value={a}>{a}</option>)}
@@ -168,7 +168,7 @@ export function ProjectsPage() {
           {([['cards', LayoutGrid, 'Cards'], ['table', Rows3, 'Table']] as const).map(([v, Icon, label]) => (
             <button
               key={v} type="button" aria-pressed={view === v} onClick={() => setViewSaved(v)}
-              className={clsx('inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-3 text-[13px] font-semibold leading-none', view === v ? 'bg-brand-600 text-white' : 'text-ink-2 hover:bg-sunken')}
+              className={clsx('inline-flex h-7 cursor-pointer items-center gap-1.5 rounded px-2.5 text-[13px] font-semibold leading-none', view === v ? 'bg-brand-600 text-white' : 'text-ink-2 hover:bg-sunken')}
             ><Icon className="size-4" />{label}</button>
           ))}
         </div>

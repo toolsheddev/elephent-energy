@@ -31,21 +31,22 @@ export function SizingDialog({ open, onClose, sqFootage }: { open: boolean; onCl
   return (
     <Modal open={open} onOpenChange={(o) => !o && onClose()} title="Heat pump sizing check" description="Heat pump output against the heating the home needs, by outdoor temperature." size="lg" footer={<Button onClick={onClose}>Close</Button>}>
       <div className="space-y-5">
-        <div className="grid grid-cols-12 gap-x-4 gap-y-3">
+        {/* Row 1: the equipment and the comfort assumptions. Row 2: the home's load. No hints under fields, so every input in a row lines up. */}
+        <div className="grid grid-cols-12 items-end gap-x-3 gap-y-3">
           <Select wrapperClassName="col-span-12 sm:col-span-6" label="Heat pump" options={HP_OUTPUTS.map((h) => h.model)} value={model} onChange={(e) => setModel(e.target.value)} />
-          <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Heating design load" suffix="BTU/hr" min={0} value={load} onChange={(e) => setLoad(e.target.value)} hint="From the Manual J" />
-          <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Design temperature" suffix="°F" value={designTemp} onChange={(e) => setDesignTemp(e.target.value)} />
           <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Indoor set temperature" suffix="°F" value={setTemp} onChange={(e) => setSetTemp(e.target.value)} />
-          <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Deration" suffix="%" min={1} max={100} value={deration} onChange={(e) => setDeration(e.target.value)} hint="Ducts, altitude, defrost" />
+          <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Deration" suffix="%" min={1} max={100} value={deration} onChange={(e) => setDeration(e.target.value)} title="Capacity lost to ducts, altitude and defrost" />
+          <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Design load (Manual J)" suffix="BTU/hr" min={0} value={load} onChange={(e) => setLoad(e.target.value)} />
+          <NumberInput wrapperClassName="col-span-6 sm:col-span-3" label="Design temperature" suffix="°F" value={designTemp} onChange={(e) => setDesignTemp(e.target.value)} />
           {sqFootage ? (
-            <div className="col-span-12 flex items-end sm:col-span-6">
-              <Button size="sm" onClick={() => setLoad(String(Math.round(sqFootage * 25)))}>Use a rough estimate ({(sqFootage * 25).toLocaleString()} BTU/hr)</Button>
+            <div className="col-span-12 sm:col-span-6">
+              <Button className="w-full sm:w-auto" onClick={() => setLoad(String(Math.round(sqFootage * 25)))}>Use a rough estimate ({(sqFootage * 25).toLocaleString()} BTU/hr)</Button>
             </div>
           ) : null}
         </div>
 
         {!ready ? (
-          <Banner tone="info" title="Enter the heating design load and design temperature">The chart shows once both are filled in. The rough estimate button uses 25 BTU/hr per square foot, which is only a placeholder until the Manual J is done.</Banner>
+          <Banner tone="info" title="Enter the heating design load and design temperature">The chart shows once both are filled in. The rough estimate uses 25 BTU/hr per square foot, only a placeholder until the Manual J is done. Deration is the capacity lost to ducts, altitude and defrost.</Banner>
         ) : (
           <>
             <div className="grid gap-3 sm:grid-cols-3">

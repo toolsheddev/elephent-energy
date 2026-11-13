@@ -1,3 +1,4 @@
+import { PRICING_STRUCTURES_QUICK_ADD } from '@/lib/options'
 import { useQuery } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
@@ -9,7 +10,6 @@ import { useQuickAddBaseDesigns } from '@/lib/hooks'
 import type { ProjectBundle, Proposal } from '@/lib/types'
 import { DEFAULT_QUICK_ADD, type QuickAddOptions } from '@sd/domain/baseDesign'
 
-const PRICING = ['standard', 'ma_forge', 'la_standard', 'ma_laminar', 'ichoosr_2026']
 const SURGE = ['Single Circuit', 'Whole Home', 'Opt Out']
 type Target = number | 'NEW_EACH' | 'NEW_SINGLE'
 
@@ -125,7 +125,7 @@ export function BaseDesignDialog({ open, onClose, bundle: b, proposal }: { open:
               </div>
             </fieldset>
             <div className="grid content-start gap-3">
-              <Select label="Pricing structure" options={PRICING} value={pricing} onChange={(e) => setPricing(e.target.value)} />
+              <Select label="Pricing structure" options={PRICING_STRUCTURES_QUICK_ADD} value={pricing} onChange={(e) => setPricing(e.target.value)} />
               <NumberInput label="Target margin" suffix="%" min={0} max={90} step="0.5" value={Math.round(o.margin * 1000) / 10} onChange={(e) => set('margin', (Number(e.target.value) || 0) / 100)} />
               <Select label="Surge protection" options={SURGE} value={o.surgeProtection} onChange={(e) => set('surgeProtection', e.target.value as QuickAddOptions['surgeProtection'])} />
             </div>

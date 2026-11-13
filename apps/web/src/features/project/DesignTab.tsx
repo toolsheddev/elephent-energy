@@ -691,7 +691,7 @@ function StockAlertDialog({ proposal, bundle, onClose }: { proposal: Proposal | 
       {flagged.length === 0 ? (
         <p className="text-[14px] text-ink-3">No low-stock equipment in this proposal.</p>
       ) : (
-        <ul className="divide-y divide-line rounded-lg border border-line">
+        <ul className="divide-y divide-line overflow-hidden rounded-lg border border-line">
           {flagged.map((s) => (
             <li key={s.id} className="p-3.5">
               <p className="text-[14px] font-bold">{s.nickname || s.system_type}</p>
@@ -735,7 +735,7 @@ function IncentivesDialog({ open, onClose, proposal, bundle }: { open: boolean; 
         {rows.length === 0 ? (
           <p className="text-[14px] text-ink-3">No incentives are applied to this proposal yet.</p>
         ) : (
-          <ul className="divide-y divide-line rounded-lg border border-line">
+          <ul className="divide-y divide-line overflow-hidden rounded-lg border border-line">
             {rows.map((l) => (
               <li key={l.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[14px]"><span>{l.description}</span><span className="num font-semibold text-ok">{money(l.price_actual * l.quantity, { cents: true })}</span></li>
             ))}

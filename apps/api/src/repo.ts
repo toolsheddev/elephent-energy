@@ -4,7 +4,7 @@
 import type {
   DepositConfig, ExistingSystems, House, Invoice, InvoiceLine, LineItemRec, Project, ProjectBundle, ProjectListItem, Proposal, SystemRec,
 } from '@sd/domain/types'
-import { normalizeCO, normalizeIncomeVerification, normalizeLenders, normalizeMA, normalizeExisting, normalizeMaintenanceInterest, normalizeSource, normalizeSystemsInterest } from '@sd/domain/options'
+import { normalizeHear, normalizeHouseLists, normalizeCO, normalizeIncomeVerification, normalizeLenders, normalizeMA, normalizeExisting, normalizeMaintenanceInterest, normalizeSource, normalizeSystemsInterest } from '@sd/domain/options'
 import { pool, type Db } from './db'
 
 type Row = Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -61,14 +61,14 @@ export async function loadBundle(id: number, c: Db = pool): Promise<ProjectBundl
   }
 
   const h = house.rows[0]
-  const houseOut: House | null = h && {
+  const houseOut: House | null = h && normalizeHouseLists({
     project_id: id, address: s(h.address), city: s(h.city), county: s(h.county), state: s(h.state), zipcode: s(h.zipcode), home_type: s(h.home_type),
     units: h.units ?? 1, num_ppl: h.num_ppl ?? 0, sq_footage: h.sq_footage, year_built: h.year_built === null ? '' : String(h.year_built),
     move_in_year: h.move_in_year === null ? '' : String(h.move_in_year), move_in_month: typeof h.move_in_date === 'string' ? h.move_in_date.slice(5, 7) : '', utility_customer_name: s(h.utility_customer_name), gas_utility: s(h.gas_utility),
     electric_utility: s(h.electric_utility), paperless_billing: h.has_paperless_billing ?? false, special_considerations: list(h.special_considerations),
     home_features: list(h.home_features), notes: s(h.addtl_notes), manual_j_complete: h.manual_j === 'complete',
-    ma: normalizeMA(h.massachusetts_details ?? {}), co: normalizeCO(h.colorado_details ?? {}), nwco: p.nwco_details ?? {},
-  }
+    ma: normalizeMA(h.massachusetts_details ?? {}), co: normalizeCO(h.colorado_details ?? {}), nwco: { ...(p.nwco_details ?? {}), hear_amount: normalizeHear(p.nwco_details?.hear_amount ?? '') },
+  })
 
   const e = existing.rows[0]
   const existingOut: ExistingSystems = e

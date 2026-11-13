@@ -18,19 +18,18 @@ const KINDS: { value: Kind; label: string }[] = [
 ]
 const RECIPIENTS = [{ value: 'elephant', label: 'Elephant Energy' }, { value: 'customer', label: 'Customer (paid directly)' }, { value: 'homeowner', label: 'Homeowner' }]
 
-/** Retool's Quick Add presets, matched by name against the catalog. A preset that has no match in this catalog is left out. */
-const PRESETS: { label: string; kind: 'equipment' | 'labor'; match: RegExp }[] = [
-  { label: 'Condensate Pump (HP)', kind: 'labor', match: /^condensate pump for heat pump/i },
-  { label: 'Condensate Pump (HPWH)', kind: 'labor', match: /^condensate pump for hpwh/i },
-  { label: "Drywall Hole 1-3'", kind: 'labor', match: /^drywall hole.*1-3/i },
-  { label: 'Drywall Touch-Up', kind: 'labor', match: /^drywall touch-?up/i },
-  { label: 'Lineset difficulty adder', kind: 'labor', match: /lineset difficulty adder/i },
-  { label: 'GFCI outlet', kind: 'labor', match: /gfci/i },
-  { label: 'Whole home surge protection', kind: 'labor', match: /^whole home surge/i },
-  { label: 'Single circuit surge protection', kind: 'labor', match: /^surge protection device/i },
-  { label: 'Simple Switch', kind: 'labor', match: /^simpleswitch/i },
-  { label: 'PVC venting', kind: 'labor', match: /^pvc venting/i },
-  { label: 'Fan powered humidifier', kind: 'equipment', match: /fan power(ed)? humidifier/i },
+/** Retool's Quick Add list (tabs2), same order, labels and catalog ids. A preset whose item is not in this catalog is shown but disabled. */
+const PRESETS: { label: string; kind: 'equipment' | 'labor' | 'discount'; id: number }[] = [
+  { label: 'Condensate Pump (HP)', kind: 'labor', id: 34 }, { label: 'Condensate Pump (HPWH)', kind: 'labor', id: 89 },
+  { label: 'HPWH Different Location Adder', kind: 'labor', id: 14 }, { label: 'Referral Discount', kind: 'discount', id: 5 },
+  { label: "Drywall Hole - 1-3'", kind: 'labor', id: 43 }, { label: 'Drywall Touch-Up', kind: 'labor', id: 42 },
+  { label: 'Repair ductwork', kind: 'labor', id: 131 }, { label: 'Lineset difficulty adder', kind: 'labor', id: 132 },
+  { label: 'HEAR management', kind: 'labor', id: 133 }, { label: 'GFCI outlet', kind: 'labor', id: 50 },
+  { label: 'Attic or crawlspace adder', kind: 'labor', id: 117 }, { label: 'Fan powered humidifier', kind: 'equipment', id: 270 },
+  { label: 'Bryant 5kW heat kit', kind: 'equipment', id: 638 }, { label: 'Bryant 8kW heat kit', kind: 'equipment', id: 639 },
+  { label: 'Bryant 10kW heat kit', kind: 'equipment', id: 640 }, { label: 'Bryant 15kW heat kit', kind: 'equipment', id: 641 },
+  { label: 'Whole home surge protection', kind: 'labor', id: 122 }, { label: 'Single circuit surge protection', kind: 'labor', id: 121 },
+  { label: 'Simple Switch', kind: 'equipment', id: 112 }, { label: 'A2L venting', kind: 'labor', id: 127 }, { label: 'PVC venting', kind: 'labor', id: 119 },
 ]
 
 let rowKey = 1
@@ -91,16 +90,17 @@ export function AddLineItemsDialog({
 
   const setRow = (key: number, patch: Partial<Row>) => setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)))
 
+  const inCatalog = (p: (typeof PRESETS)[number]) => p.kind === 'discount' || catalog(p.kind).some((c) => c.id === p.id)
   const applyPreset = (name: string) => {
     setPreset(name)
     const p = PRESETS.find((x) => x.label === name)
     if (!p) return
-    const hit = catalog(p.kind).find((c) => p.match.test(c.label))
+    // Fills the first row, as in Retool. Discounts have no catalog here, so the amount is typed in.
+    if (p.kind === 'discount') { setRows((rs) => [{ ...rs[0], kind: 'discount', detail: '', itemId: null, qty: 1, desc: p.label, amount: 0 }, ...rs.slice(1)]); return }
+    const hit = catalog(p.kind).find((c) => c.id === p.id)
     if (!hit) return
-    // Fills the first row, as in Retool
     setRows((rs) => [{ ...rs[0], kind: p.kind, detail: hit.detail, itemId: hit.id, qty: 1 }, ...rs.slice(1)])
   }
-  const availablePresets = useMemo(() => PRESETS.filter((p) => catalog(p.kind).some((c) => p.match.test(c.label))), [])
 
   const submit = async () => {
     const lines: Omit<LineItemRec, 'id' | 'system_id'>[] = rows.map((r, i) => {
@@ -168,7 +168,7 @@ export function AddLineItemsDialog({
           )}
         </div>
 
-        <Select label="Quick Add" options={['', ...availablePresets.map((p) => p.label)].map((v) => ({ value: v, label: v || 'Other (choose below)' }))} value={preset} onChange={(e) => applyPreset(e.target.value)} />
+        <Select label="Quick Add" placeholder="Other (choose below)" options={[...PRESETS.map((p) => ({ value: p.label, label: inCatalog(p) ? p.label : `${p.label} (not in this catalog)`, disabled: !inCatalog(p) }))]} value={preset} onChange={(e) => applyPreset(e.target.value)} />
 
         <div className="space-y-3">
           {rows.map((r, i) => {

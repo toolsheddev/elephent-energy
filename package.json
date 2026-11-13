@@ -17,7 +17,8 @@
     "build": "npm run build -w @sd/web",
     "test": "npm run test -w @sd/engine",
     "db:reset": "npm run seed:reset -w @sd/api",
-    "verify": "npm run verify -w @sd/api"
+    "verify": "npm run verify -w @sd/api",
+    "check:dropdowns": "npm run check:dropdowns -w @sd/api"
   },
   "devDependencies": {
     "concurrently": "^9.0.0",

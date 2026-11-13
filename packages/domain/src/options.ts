@@ -14,13 +14,17 @@ export const COUNTIES_BY_STATE: Record<string, string[]> = {
   NJ: ['Bergen County', 'Essex County'],
 }
 
-export const HOME_TYPES = ['Single family', 'Townhome', 'Duplex', 'Condo', 'Multifamily (2–4 units)', 'Mobile home']
+// Retool HomeType
+export const HOME_TYPES = ['Single Family', 'Multi Family', 'Townhouse', 'Condo']
 export const GAS_UTILITIES = ['Xcel Energy', 'Black Hills Energy', 'Eversource', 'National Grid', 'Columbia Gas', 'None / propane']
 export const ELECTRIC_UTILITIES = ['Xcel Energy', 'Eversource', 'National Grid', 'Holy Cross Energy', 'Yampa Valley Electric', 'Platte River Power']
 export const MONTHS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'].map((value, i) => ({ value, label: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][i]! }))
-export const MOVE_IN_YEARS = Array.from({ length: 40 }, (_, i) => String(2026 - i))
-export const SPECIAL_CONSIDERATIONS = ['Historic district', 'HOA approval', 'Limited attic access', 'Slab foundation', 'Knob-and-tube wiring', 'Aluminum wiring', 'Septic']
-export const HOME_FEATURES = ['Finished basement', 'Crawlspace', 'Attic', 'Garage', 'Solar PV', 'Pool', 'Radiant floors', 'Ductwork present']
+// Retool moveInYear: _.range(1900, this year + 1). Newest first here so the common years are at the top.
+export const MOVE_IN_YEARS = Array.from({ length: new Date().getFullYear() - 1899 }, (_, i) => String(new Date().getFullYear() - i))
+// Retool specialConsiderations
+export const SPECIAL_CONSIDERATIONS = [{ value: 'hoa', label: 'HOA' }, { value: 'historicalDistrict', label: 'Historical District' }, { value: 'none', label: 'None' }]
+// Retool homeFeatures
+export const HOME_FEATURES = [{ value: 'attic', label: 'Attic' }, { value: 'unfinishedBasement', label: 'Unfinished basement' }, { value: 'finishedBasement', label: 'Finished basement' }, { value: 'crawlspace', label: 'Crawlspace' }]
 
 /** Postgres enum `project_status*`, as shown in the Retool status dropdown. The dropdown scrolls, so values after
  *  'Project Complete' may exist; this is the part visible in the screenshot. */
@@ -85,7 +89,8 @@ export const MA_WHV = YES_NO_NA
 export const CO_EFFICIENCY = [
   { value: 'notComplete', label: 'Not complete, will NOT complete' }, { value: 'scheduled', label: 'Not complete, will complete' }, { value: 'Completed', label: 'Completed' }, { value: 'na', label: 'N/A' },
 ]
-export const HEAR_AMOUNTS = ['None', 'Up to $8,000', 'Up to $14,000']
+// Retool HEARAmount
+export const HEAR_AMOUNTS = [{ value: 'none', label: 'None' }, { value: '50', label: '50%' }, { value: '100', label: '100%' }]
 
 /* Existing-system types, copied from Retool's cascading "type" pickers. The stored value is Retool's combined string (e.g. "furnace-gas-condensing");
    the label is the path through the cascade. */
@@ -149,24 +154,26 @@ export function normalizeExisting<E extends { heating: { type: string }; cooling
   }
 }
 
+// Retool PricingStructure (Add a system)
 export const PRICING_STRUCTURES = [
-  { value: 'standard', label: 'Standard' },
-  { value: 'ma_laminar', label: 'MA Laminar' },
-  { value: 'ma_forge', label: 'MA Forge' },
-  { value: 'la_standard', label: 'LA Standard' },
-  { value: 'ichoosr_2026', label: 'iChoosr 2026' },
+  { value: 'standard', label: 'CO (Standard) Pricing' }, { value: 'ma_forge', label: 'MA (Forge) Pricing' }, { value: 'ma_laminar', label: 'MA (Laminar) Pricing' },
+  { value: 'la_standard', label: 'LA (Standard) Pricing' }, { value: 'ichoosr_2026', label: 'iChoosr2026' }, { value: 'la_redeemer', label: 'LA Redeemer 2026' },
+]
+// Retool PricingStructure3 (Base Design quick add): five structures, shorter labels
+export const PRICING_STRUCTURES_QUICK_ADD = [
+  { value: 'standard', label: 'CO' }, { value: 'ma_forge', label: 'MA' }, { value: 'ma_laminar', label: 'MA (Laminar) Pricing' }, { value: 'la_standard', label: 'CA' }, { value: 'ichoosr_2026', label: 'iChoosr2026' },
 ]
 
+/** Retool costSystemType, same order and labels (Retool spells "Energy Efficency"; corrected here). The maintenance plan has its own dialog in Retool too. */
 export const SYSTEM_TYPES: { value: string; label: string; hint: string }[] = [
-  { value: 'hvac', label: 'Heat pump HVAC', hint: 'Condenser, air handlers, wall heads' },
-  { value: 'water heater', label: 'Heat pump water heater', hint: 'HPWH with TMV and venting options' },
-  { value: 'panel', label: 'Electrical upgrades', hint: 'Panel, subpanel, service' },
-  { value: 'ev', label: 'EV charger', hint: 'Level 2 charger and circuit' },
-  { value: 'cooktop', label: 'Induction wiring', hint: 'Circuit for induction cooktop' },
-  { value: 'energy efficiency', label: 'Energy efficiency', hint: 'Audit, air sealing, insulation' },
-  { value: 'maintenance', label: 'Maintenance plan', hint: 'Annual service plan' },
-  { value: 'labor warranty', label: 'Labor warranty', hint: 'Extended labor coverage' },
-  { value: 'adder', label: 'Other adder', hint: 'One-off labor or equipment line' },
+  { value: 'hvac', label: 'Heat Pump', hint: 'Condenser, air handlers, wall heads' },
+  { value: 'water heater', label: 'Water Heater', hint: 'HPWH with TMV and venting options' },
+  { value: 'ev', label: 'EV Charger', hint: 'Level 2 charger and circuit' },
+  { value: 'energy efficiency', label: 'Energy Efficiency', hint: 'Audit, air sealing, insulation' },
+  { value: 'cooktop', label: 'Induction Wiring', hint: 'Circuit for induction cooktop' },
+  { value: 'panel', label: 'Electrical Upgrades', hint: 'Panel, subpanel, service' },
+  { value: 'labor warranty', label: 'Labor Warranty', hint: 'Extended labor coverage' },
+  { value: 'adder', label: 'Other', hint: 'One-off labor or equipment line' },
 ]
 
 export const HCAS = ['Allison Toth', 'Marcus Reed', 'Priya Nair', 'Dan Okafor', 'Michelle Cho', 'Brice Turner', 'Louis Park', 'Luke Hart']
@@ -202,3 +209,41 @@ export function normalizeMA<T extends Record<string, unknown>>(ma: T): T {
 export function normalizeCO<T extends Record<string, unknown>>(co: T): T {
   return typeof co.efficiency === 'string' ? { ...co, efficiency: coEff(co.efficiency) } : co
 }
+
+/* ---- Add a system: Retool's fixed lists ---- */
+export const FINANCING_OPTIONS = [{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }, { value: 'unsure', label: 'Unsure' }]
+export const SURGE_OPTIONS = ['Single Circuit', 'Whole Home', 'Opt Out']
+/** Retool AHULocationType3 / WHLocation4 */
+export const EQUIPMENT_LOCATIONS = ['Mechanical Room', 'Attic', 'Basement', 'Crawlspace', 'Garage', 'Closet']
+/** Retool CircuitLengthCondenser3 / CircuitLengthAHU3: the value is the length the pricing uses */
+export const CIRCUIT_LENGTH_HP = [{ value: 15, label: 'Less than 15 feet' }, { value: 25, label: '15 to 40 feet' }, { value: 40, label: 'Over 40 feet' }]
+/** Retool CircuitLengthHPWH3 */
+export const CIRCUIT_LENGTH_HPWH = [{ value: 10, label: 'Less than 10 feet' }, { value: 15, label: '10 to 25 feet' }, { value: 25, label: 'Over 25 feet' }]
+/** Retool PlugOrHardwiredEV3 */
+export const EV_CONNECTION = [{ value: 'NEMA 14-50', label: 'NEMA 14-50 Plug' }, { value: 'Disconnect', label: 'Hardwired w/Disconnect' }]
+/** Retool laborWarrantyLength / laborWarrantyLength2 */
+export const LABOR_WARRANTY_HP = [{ value: 2, label: '2 Years' }, { value: 5, label: '5 Years' }, { value: 10, label: '10 Years' }, { value: 12, label: '12 Years' }]
+export const LABOR_WARRANTY_HPWH = [{ value: 10, label: '10 Years' }]
+/** Retool change order selects (requester2, responsible2, impact2, timeline2) */
+export const CO_PARTIES = ['Elephant', 'Homeowner', 'HVAC Installer', 'Plumbing Installer', 'Electrical Installer', 'Other']
+export const CO_IMPACT = [
+  { value: '1', label: 'No noticeable impact' }, { value: '2', label: 'Minor inconvenience or aesthetic impact' }, { value: '3', label: 'Some comfort impact' },
+  { value: '4', label: 'Customer dissatisfaction' }, { value: '5', label: 'Project feasibility in question' },
+]
+export const CO_TIMELINE = [
+  { value: '1', label: 'Negligible delay' }, { value: '2', label: 'Less than 1 day delay' }, { value: '3', label: '1-3 day delay' }, { value: '4', label: '4-7 day delay' }, { value: '5', label: 'Greater than 1 week delay' },
+]
+
+/** Home values saved before the lists matched Retool. Values with no Retool equivalent are kept as they are. */
+const LEGACY_HOME_TYPE: Record<string, string> = { 'Single family': 'Single Family', Townhome: 'Townhouse', Duplex: 'Multi Family', 'Multifamily (2–4 units)': 'Multi Family' }
+const LEGACY_FEATURE: Record<string, string> = { 'Finished basement': 'finishedBasement', Crawlspace: 'crawlspace', Attic: 'attic' }
+const LEGACY_SPECIAL: Record<string, string> = { 'Historic district': 'historicalDistrict', 'HOA approval': 'hoa' }
+export function normalizeHouseLists<H extends { home_type: string; home_features: string[]; special_considerations: string[] }>(h: H): H {
+  return {
+    ...h,
+    home_type: LEGACY_HOME_TYPE[h.home_type] ?? h.home_type,
+    home_features: [...new Set(h.home_features.map((x) => LEGACY_FEATURE[x] ?? x))],
+    special_considerations: [...new Set(h.special_considerations.map((x) => LEGACY_SPECIAL[x] ?? x))],
+  }
+}
+export const normalizeHear = (v: string) => (v === 'None' ? 'none' : v)

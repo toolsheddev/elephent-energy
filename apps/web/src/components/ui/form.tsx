@@ -23,9 +23,9 @@ export interface FieldShellProps {
 
 export function FieldShell({ label, hint, error, required, className, id, children }: FieldShellProps) {
   return (
-    <div className={clsx('flex min-w-0 flex-col gap-1.5', className)}>
+    <div className={clsx('flex min-w-0 flex-col gap-1', className)}>
       {label != null && (
-        <label htmlFor={id} className="text-[13px] font-semibold text-ink-2">
+        <label htmlFor={id} className="text-[12.5px] font-semibold text-ink-2">
           {label}
           {required && <span className="ml-0.5 text-bad">*</span>}
         </label>
@@ -41,7 +41,7 @@ export function FieldShell({ label, hint, error, required, className, id, childr
 }
 
 const control =
-  'h-9 w-full rounded-md border border-line-strong bg-surface px-3 text-[14px] text-ink placeholder:text-ink-3 ' +
+  'h-8 w-full rounded-md border border-line-strong bg-surface px-2.5 text-[13.5px] text-ink placeholder:text-ink-3 ' +
   'transition-[border-color,box-shadow] hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-100 ' +
   'disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-3 aria-[invalid=true]:border-bad'
 
@@ -180,7 +180,7 @@ export function Select({
         <select
           id={fid}
           aria-invalid={!!error}
-          className={clsx(control, 'appearance-none pr-9', className)}
+          className={clsx(control, 'appearance-none text-ellipsis pr-9', className)}
           {...rest}
         >
           <option value="">{placeholder ?? 'Select…'}</option>
@@ -241,7 +241,7 @@ export function Switch({
       className={clsx('flex cursor-pointer items-center gap-2.5 py-1.5 text-left disabled:cursor-not-allowed disabled:opacity-50', className)}
     >
       <span className={clsx('relative h-5 w-9 shrink-0 rounded-full transition-colors', checked ? 'bg-brand-600' : 'bg-line-strong')}>
-        <span className={clsx('absolute top-0.5 size-4 rounded-full bg-white shadow transition-[left]', checked ? 'left-[18px]' : 'left-0.5')} />
+        <span className={clsx('absolute top-0.5 size-4 rounded-full bg-white shadow transition-[left]', checked ? 'left-[1.125rem]' : 'left-0.5')} />
       </span>
       <span className="text-[14px] text-ink">{label}</span>
     </button>
@@ -344,7 +344,7 @@ export function MultiSelect({
             </span>
           ))}
           {value.length > 1 && <span className="shrink-0 whitespace-nowrap rounded-xs bg-sunken px-1.5 py-0.5 text-[13px] font-medium text-ink-2">+{value.length - 1}</span>}
-          <ChevronDown className="pointer-events-none absolute right-3 top-3 size-4 text-ink-3" />
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
         </button>
         {open && (
           <ul className="absolute z-30 mt-1 max-h-60 w-full min-w-[15rem] overflow-auto rounded-md border border-line bg-surface p-1 shadow-pop" style={{ animation: 'fade-in .12s' }}>

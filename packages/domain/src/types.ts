@@ -44,7 +44,7 @@ export interface Project {
   incentive_notes: string
   income_verification: string
   income: number
-  financing: '' | 'yes' | 'no'
+  financing: '' | 'yes' | 'no' | 'unsure'
   lender: string[]
   financing_amounts: number[]
   blocker: string

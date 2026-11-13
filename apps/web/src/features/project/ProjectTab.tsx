@@ -10,7 +10,7 @@ import { toast } from '@/components/ui/overlay'
 import { SizingDialog } from './SizingDialog'
 import { UtilityRequestDialog } from './UtilityRequestDialog'
 import { invoiceStatuses, rollupProposalStatus } from '@/lib/calc'
-import { useSaveProjectInfo } from '@/lib/hooks'
+import { useLookups, useSaveProjectInfo } from '@/lib/hooks'
 import * as O from '@/lib/options'
 import type { ExistingSystems, House, Project, ProjectBundle } from '@/lib/types'
 
@@ -131,7 +131,13 @@ export function CustomerSection() {
 export function HomeSection() {
   const { register, control, setValue, formState: { errors } } = useFormContext<Values>()
   const state = useWatch({ control, name: 'house.state' })
-  const counties = O.COUNTIES_BY_STATE[state] ?? []
+  const county = useWatch({ control, name: 'house.county' })
+  const gas = useWatch({ control, name: 'house.gas_utility' })
+  const elec = useWatch({ control, name: 'house.electric_utility' })
+  const { data: lk } = useLookups()
+  // Retool reads these from its database; the saved value stays selectable even if it is not in the list
+  const withCurrent = (list: string[] | undefined, v: string) => [...new Set([...(list ?? []), ...(v ? [v] : [])])]
+  const counties = withCurrent([...(lk?.countiesByState[state] ?? []), 'Not Listed'], county)
   return (
     <Card id="sec-home" className="scroll-mt-32">
       <CardHeader icon={<Home />} title="Home" subtitle="Address, utilities and building details used for pricing and rebates." />
@@ -140,7 +146,7 @@ export function HomeSection() {
           <Input wrapperClassName="col-span-12 lg:col-span-5" label="Street address" required error={errors.house?.address?.message} {...register('house.address', { required: 'Required' })} />
           <Input wrapperClassName="col-span-6 lg:col-span-3" label="City" {...register('house.city')} />
           <Select
-            wrapperClassName="col-span-6 lg:col-span-2" label="State" options={O.US_STATES}
+            wrapperClassName="col-span-6 lg:col-span-2" label="State" options={withCurrent(lk?.states, state)}
             {...register('house.state', { onChange: () => setValue('house.county', '', { shouldDirty: true }) })}
           />
           <Input wrapperClassName="col-span-6 lg:col-span-2" label="Zip" inputMode="numeric" error={errors.house?.zipcode?.message} {...register('house.zipcode', { pattern: { value: /^\d{5}$/, message: '5 digits' } })} />
@@ -155,8 +161,8 @@ export function HomeSection() {
           <Select wrapperClassName="col-span-6 lg:col-span-2" label="Move-in year" options={O.MOVE_IN_YEARS} {...register('house.move_in_year')} />
           <Input wrapperClassName="col-span-6 lg:col-span-3" label="Utility account name" {...register('house.utility_customer_name')} />
 
-          <Select wrapperClassName="col-span-6 lg:col-span-3" label="Gas utility" options={O.GAS_UTILITIES} {...register('house.gas_utility')} />
-          <Select wrapperClassName="col-span-6 lg:col-span-3" label="Electric utility" options={O.ELECTRIC_UTILITIES} {...register('house.electric_utility')} />
+          <Select wrapperClassName="col-span-6 lg:col-span-3" label="Gas utility" options={withCurrent(lk?.gasUtilities, gas)} {...register('house.gas_utility')} />
+          <Select wrapperClassName="col-span-6 lg:col-span-3" label="Electric utility" options={withCurrent(lk?.electricUtilities, elec)} {...register('house.electric_utility')} />
           <Controller control={control} name="house.special_considerations" render={({ field }) => (
             <MultiSelect className="col-span-12 sm:col-span-6 lg:col-span-3" label="Special considerations" options={O.SPECIAL_CONSIDERATIONS} value={field.value} onChange={field.onChange} />
           )} />
@@ -253,9 +259,9 @@ export function FinancingSection() {
           <Controller control={control} name="project.financing" render={({ field }) => (
             <Segmented
               className="col-span-12 sm:col-span-4" label="Financing"
-              value={(field.value || '') as 'yes' | 'no'}
-              onChange={(v) => { field.onChange(v); if (v === 'no') { setValue('project.lender', [], { shouldDirty: true }); setValue('project.financing_amounts', [], { shouldDirty: true }) } }}
-              options={[{ value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }] as { value: 'yes' | 'no'; label: string }[]}
+              value={(field.value || '') as 'yes' | 'no' | 'unsure'}
+              onChange={(v) => { field.onChange(v); if (v !== 'yes') { setValue('project.lender', [], { shouldDirty: true }); setValue('project.financing_amounts', [], { shouldDirty: true }) } }}
+              options={O.FINANCING_OPTIONS as { value: 'yes' | 'no' | 'unsure'; label: string }[]}
             />
           )} />
           {financing === 'yes' && (

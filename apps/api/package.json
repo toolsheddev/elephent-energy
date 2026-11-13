@@ -9,7 +9,8 @@
     "seed": "tsx --env-file-if-exists=../../.env src/seed.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "seed:reset": "tsx --env-file-if-exists=../../.env src/seed.ts --reset",
-    "verify": "tsx --env-file-if-exists=../../.env src/verify.ts"
+    "verify": "tsx --env-file-if-exists=../../.env src/verify.ts",
+    "check:dropdowns": "tsx src/check-dropdowns.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.0",

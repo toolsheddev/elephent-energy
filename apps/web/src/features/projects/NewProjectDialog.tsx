@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/core'
 import { Input, Select } from '@/components/ui/form'
 import { Modal, toast } from '@/components/ui/overlay'
 import { api } from '@/lib/api'
-import { HCAS, US_STATES } from '@/lib/options'
+import { HCAS } from '@/lib/options'
+import { useLookups } from '@/lib/hooks'
 
 const blank = { firstName: '', lastName: '', email: '', phone: '', address: '', city: '', state: 'CO', zipcode: '', county: '', hca: '', dealTitle: '' }
 
@@ -14,6 +15,7 @@ export function NewProjectDialog({ open, onClose }: { open: boolean; onClose: ()
   const nav = useNavigate()
   const qc = useQueryClient()
   const [f, setF] = useState(blank)
+  const { data: lk } = useLookups()
   useEffect(() => { if (open) setF(blank) }, [open])
   const set = (k: keyof typeof blank) => (e: { target: { value: string } }) => setF((c) => ({ ...c, [k]: e.target.value }))
   const create = useMutation({
@@ -40,7 +42,7 @@ export function NewProjectDialog({ open, onClose }: { open: boolean; onClose: ()
         <Input wrapperClassName="col-span-12 sm:col-span-6" label="Phone" value={f.phone} onChange={set('phone')} />
         <Input wrapperClassName="col-span-12" label="Street address" required value={f.address} onChange={set('address')} />
         <Input wrapperClassName="col-span-12 sm:col-span-5" label="City" required value={f.city} onChange={set('city')} />
-        <Select wrapperClassName="col-span-6 sm:col-span-3" label="State" required options={US_STATES} value={f.state} onChange={set('state')} />
+        <Select wrapperClassName="col-span-6 sm:col-span-3" label="State" required options={[...new Set([...(lk?.states ?? []), f.state])].filter(Boolean)} value={f.state} onChange={set('state')} />
         <Input wrapperClassName="col-span-6 sm:col-span-4" label="Zip" value={f.zipcode} onChange={set('zipcode')} />
         <Input wrapperClassName="col-span-12 sm:col-span-6" label="County" value={f.county} onChange={set('county')} />
         <Select wrapperClassName="col-span-12 sm:col-span-6" label="HCA" placeholder="Select…" options={HCAS} value={f.hca} onChange={set('hca')} />

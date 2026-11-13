@@ -9,7 +9,7 @@ import { money, pct, totalsOf } from '@/lib/calc'
 import { priceCatalogLine, recalcDraft, refData, runSpec, toEngineHouse, type NewLine, type RecalcContext, type SpecOutcome, type SystemInput } from '@/lib/engine'
 import { useAddSystem, useCreateProposal, useReplaceSystem, useUpdateProposal } from '@/lib/hooks'
 import { boxOptionsFor, calculateBranchBoxes, cleanAssignments, fromRetoolAssignments, manualBranchBoxOptions, toRetoolAssignments, withAssignments, type UnitAssignments } from '@sd/domain/branchBoxes'
-import { HEATING_LOAD_COVERAGE, MA_REBATE_TYPES, PRICING_STRUCTURES, SYSTEM_TYPES } from '@/lib/options'
+import { CIRCUIT_LENGTH_HP, CIRCUIT_LENGTH_HPWH, EQUIPMENT_LOCATIONS, EV_CONNECTION, HEATING_LOAD_COVERAGE, LABOR_WARRANTY_HP, LABOR_WARRANTY_HPWH, MA_REBATE_TYPES, PRICING_STRUCTURES, SURGE_OPTIONS, SYSTEM_TYPES } from '@/lib/options'
 import type { LineItemRec, ProjectBundle, Proposal, SystemRec, SystemType } from '@/lib/types'
 
 /* ---------------- catalog options (from the engine's reference data) ---------------- */
@@ -37,6 +37,9 @@ const CATALOG = {
   electricalLabor: laborOptions((l) => l.category === 'electrical' && l.subcategory === 'equipment'),
   adderLabor: refData.labor.filter((l) => l.subcategory === 'adder').map((l) => ({ value: l.id, label: `${l.category ?? 'other'}: ${l.name}` })).sort((a, b) => a.label.localeCompare(b.label)),
 }
+
+/** Retool's Pricing Effective Date list: the distinct start dates of the price table, newest first. The current value stays selectable. */
+const priceDates = (current: string) => [...new Set([...refData.prices.map((p) => String(p.active_date ?? '').slice(0, 10)).filter(Boolean), ...(current ? [current] : [])])].sort().reverse()
 
 /** Systems the engine can spec today. */
 const SUPPORTED: Record<string, CostSystemType> = {
@@ -338,7 +341,7 @@ export function AddSystemDrawer({
                 )}
                 <Input wrapperClassName="col-span-12 sm:col-span-6" label="System nickname" placeholder={defaultName(type)} value={nickname} onChange={(e) => setNickname(e.target.value)} />
                 <Select wrapperClassName="col-span-12 sm:col-span-4" label="Pricing structure" options={PRICING_STRUCTURES} value={pricing} onChange={(e) => setPricing(e.target.value)} />
-                <Input wrapperClassName="col-span-6 sm:col-span-4" label="Pricing effective date" type="date" value={(input.PricingEffectiveDate ?? '').slice(0, 10)} onChange={(e) => set(['PricingEffectiveDate'], e.target.value)} />
+                <Select wrapperClassName="col-span-6 sm:col-span-4" label="Pricing effective date" options={priceDates((input.PricingEffectiveDate ?? '').slice(0, 10))} value={(input.PricingEffectiveDate ?? '').slice(0, 10)} onChange={(e) => set(['PricingEffectiveDate'], e.target.value)} />
                 <NumberInput wrapperClassName="col-span-6 sm:col-span-4" label="Target margin" suffix="%" step="0.5" min={0} max={90} value={Math.round(margin * 1000) / 10} onChange={(e) => setMargin((Number(e.target.value) || 0) / 100)} />
                 <Input wrapperClassName="col-span-6 sm:col-span-4" label="Approx install date" type="date" value={(input.rebateEffectiveDate ?? '').slice(0, 10)} onChange={(e) => set(['rebateEffectiveDate'], e.target.value)} />
                 {type === 'hvac' && house?.state === 'CO' && (
@@ -355,8 +358,8 @@ export function AddSystemDrawer({
                 )}
                 {(type === 'hvac' || type === 'water heater' || type === 'panel') && (
                   <Select
-                    wrapperClassName="col-span-12 sm:col-span-4" label="Surge protection" placeholder="None"
-                    options={['Whole Home', 'Single Circuit']} value={input.surgeProtection ?? ''} onChange={(e) => set(['surgeProtection'], e.target.value || null)}
+                    wrapperClassName="col-span-12 sm:col-span-4" label="Surge protection" placeholder="Select an option"
+                    options={SURGE_OPTIONS} value={input.surgeProtection ?? ''} onChange={(e) => set(['surgeProtection'], e.target.value || null)}
                   />
                 )}
               </FormGrid>
@@ -368,7 +371,7 @@ export function AddSystemDrawer({
               <Section title="Condenser" subtitle="The outdoor unit.">
                 <Select wrapperClassName="col-span-12 sm:col-span-8" label="Model" required options={CATALOG.condenser} {...pick(['heatPump', 'condenser', 'model'])} />
                 <Input wrapperClassName="col-span-12 sm:col-span-4" label="Location" placeholder="e.g. North side yard" {...txt(['heatPump', 'condenser', 'location'])} />
-                <NumberInput wrapperClassName="col-span-6 sm:col-span-4" label="Circuit length" suffix="ft" min={0} {...num(['heatPump', 'condenser', 'electrical', 'circuitLength'])} />
+                <Select wrapperClassName="col-span-6 sm:col-span-4" label="Circuit length" options={CIRCUIT_LENGTH_HP} {...pick(['heatPump', 'condenser', 'electrical', 'circuitLength'])} />
                 <Checkbox className="col-span-6 sm:col-span-4 sm:mt-6" label="Difficult circuit" {...chk(['heatPump', 'condenser', 'electrical', 'difficult'])} />
                 <Checkbox className="col-span-12 sm:col-span-4 sm:mt-6" label="GFI outlet" {...chk(['heatPump', 'condenser', 'serviceOutlet', 'enabled'])} />
               </Section>
@@ -405,9 +408,9 @@ export function AddSystemDrawer({
                 return (
                   <Section key={`ahu${i}`} title={`Air handler ${i + 1}`}>
                     <Select wrapperClassName="col-span-12 sm:col-span-8" label="Model" required options={CATALOG.ahu} {...pick([...base, 'model', 'id'])} />
-                    <Input wrapperClassName="col-span-12 sm:col-span-4" label="Location" {...txt([...base, 'location'])} />
+                    <Select wrapperClassName="col-span-12 sm:col-span-4" label="Location" options={EQUIPMENT_LOCATIONS} {...txt([...base, 'location'])} />
                     {boxPicker('ahu', i, 'col-span-12')}
-                    <NumberInput wrapperClassName="col-span-6 sm:col-span-4" label="Circuit length" suffix="ft" min={0} {...num([...base, 'electrical', 'circuit_length'])} />
+                    <Select wrapperClassName="col-span-6 sm:col-span-4" label="Circuit length" options={CIRCUIT_LENGTH_HP} {...pick([...base, 'electrical', 'circuit_length'])} />
                     <Select
                       wrapperClassName="col-span-6 sm:col-span-8" label="Thermostat" options={CATALOG.thermostat} value={u.thermostat.id ?? ''}
                       onChange={(e) => {
@@ -445,8 +448,8 @@ export function AddSystemDrawer({
           {type === 'water heater' && (
             <Section title="Heat pump water heater">
               <Select wrapperClassName="col-span-12 sm:col-span-8" label="Model" required options={CATALOG.hpwh} {...pick(['HPWH', 'equipment', 'model'])} />
-              <Input wrapperClassName="col-span-12 sm:col-span-4" label="Location" {...txt(['HPWH', 'equipment', 'location'])} />
-              <NumberInput wrapperClassName="col-span-6 sm:col-span-4" label="Circuit length" suffix="ft" min={0} {...num(['HPWH', 'electrical', 'circuitLength'])} />
+              <Select wrapperClassName="col-span-12 sm:col-span-4" label="Location" options={EQUIPMENT_LOCATIONS} {...txt(['HPWH', 'equipment', 'location'])} />
+              <Select wrapperClassName="col-span-6 sm:col-span-4" label="Circuit length" options={CIRCUIT_LENGTH_HPWH} {...pick(['HPWH', 'electrical', 'circuitLength'])} />
               <Checkbox className="col-span-6 sm:col-span-4 sm:mt-6" label="Difficult circuit" {...chk(['HPWH', 'electrical', 'difficult'])} />
               <Checkbox className="col-span-12 sm:col-span-4 sm:mt-6" label="GFI outlet" {...chk(['HPWH', 'components', 'serviceOutlet'])} />
               <Checkbox className="col-span-6 sm:col-span-4" label="Thermostatic mixing valve" {...chk(['HPWH', 'components', 'tmv'])} />
@@ -461,7 +464,7 @@ export function AddSystemDrawer({
               <Select wrapperClassName="col-span-12 sm:col-span-8" label="Charger (optional)" options={CATALOG.ev} placeholder="Circuit only, customer supplies charger" {...pick(['evCharging', 'charger', 'model'])} />
               <Input wrapperClassName="col-span-12 sm:col-span-4" label="Location" {...txt(['evCharging', 'charger', 'location'])} />
               <NumberInput wrapperClassName="col-span-6 sm:col-span-4" label="Circuit length" suffix="ft" min={0} {...num(['evCharging', 'electrical', 'circuitLength'])} />
-              <Select wrapperClassName="col-span-6 sm:col-span-4" label="Connection" required options={['Plug', 'Hardwired']} value={input.evCharging.electrical.plugOrHardwired.value ?? ''} onChange={(e) => set(['evCharging', 'electrical', 'plugOrHardwired'], { value: e.target.value || null })} />
+              <Select wrapperClassName="col-span-6 sm:col-span-4" label="Connection type" required options={EV_CONNECTION} value={input.evCharging.electrical.plugOrHardwired.value ?? ''} onChange={(e) => set(['evCharging', 'electrical', 'plugOrHardwired'], { value: e.target.value || null })} />
               <Checkbox className="col-span-12 sm:col-span-4 sm:mt-6" label="Difficult circuit" {...chk(['evCharging', 'electrical', 'difficult'])} />
             </Section>
           )}
@@ -503,7 +506,8 @@ export function AddSystemDrawer({
 
           {type === 'labor warranty' && (
             <Section title="Labor warranty">
-              <Select wrapperClassName="col-span-6 sm:col-span-4" label="Heat pump term" options={[{ value: 5, label: '5 years' }, { value: 10, label: '10 years' }]} {...pick(['laborWarranty', 'warranty', 'hp_term'])} />
+              <Select wrapperClassName="col-span-6 sm:col-span-4" label="Heat pump labor warranty" placeholder="None" options={LABOR_WARRANTY_HP} {...pick(['laborWarranty', 'warranty', 'hp_term'])} />
+              <Select wrapperClassName="col-span-6 sm:col-span-4" label="Water heater labor warranty" placeholder="None" options={LABOR_WARRANTY_HPWH} {...pick(['laborWarranty', 'warranty', 'hpwh_term'])} />
               <Input wrapperClassName="col-span-6 sm:col-span-4" label="Manufacturer" {...txt(['laborWarranty', 'manufacturer'])} />
             </Section>
           )}

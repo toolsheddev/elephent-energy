@@ -45,7 +45,7 @@ export function InlineText({ value, placeholder, onSave, label }: { value: strin
       onClick={(e) => e.stopPropagation()}
       onBlur={() => { if (v.trim() !== value) onSave(v.trim()) }}
       onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') { setV(value); (e.target as HTMLInputElement).blur() } }}
-      className="h-8 w-full min-w-0 rounded-md border border-transparent bg-transparent px-2 text-[14px] placeholder:text-ink-3 hover:border-line-strong focus:border-brand-500 focus:bg-surface focus:outline-none focus:ring-3 focus:ring-brand-100"
+      className="h-8 w-full min-w-0 text-ellipsis rounded-md border border-transparent bg-transparent px-2 text-[14px] placeholder:text-ink-3 hover:border-line-strong focus:border-brand-500 focus:bg-surface focus:outline-none focus:ring-3 focus:ring-brand-100"
     />
   )
 }

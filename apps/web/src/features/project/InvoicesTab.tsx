@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { BadgeCheck, CheckCircle2, ExternalLink, FileText, Pencil, ReceiptText, Send, Trash2 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { jumpTo } from './QuotePanel'
+import { useView } from './views'
 import { Banner, Button, Card, CardBody, CardHeader, EmptyState, StatusPill } from '@/components/ui/core'
 import { NumberInput, Segmented, Switch, Textarea } from '@/components/ui/form'
 import { Modal, toast } from '@/components/ui/overlay'
@@ -24,6 +24,7 @@ const DEPOSIT_CHOICES: { value: string; label: string; sub?: string }[] = [
 
 export function InvoicesTab({ bundle: b }: { bundle: ProjectBundle }) {
   const invoices = b.invoices ?? []
+  const { go } = useView()
 
   if (!b.project.finalized_proposal_id) {
     const designed = b.systems.some((x) => x.system_type !== 'other')
@@ -32,7 +33,7 @@ export function InvoicesTab({ bundle: b }: { bundle: ProjectBundle }) {
       <Card>
         <EmptyState
           icon={<ReceiptText className="size-5" />} title={designed ? 'Finalize a proposal first' : 'Design a system first'}
-          action={<Button variant="primary" onClick={() => jumpTo('sec-design')}>Go to Options and pricing</Button>}
+          action={<Button variant="primary" onClick={() => go('design')}>Go to Options and pricing</Button>}
         >
           {designed
             ? `Invoices are built from the finalized proposal. ${pending ? 'Pick the option you want under Options and pricing and press Finalize in the panel on the right.' : 'Create an option under Options and pricing and press Finalize.'}`

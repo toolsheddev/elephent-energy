@@ -25,7 +25,7 @@ export function Modal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-ink/40 backdrop-blur-[2px]" style={{ animation: 'fade-in .15s' }} />
         <Dialog.Content
-          className={clsx('fixed left-1/2 top-[8vh] z-50 flex max-h-[84vh] w-[calc(100vw-2rem)] -translate-x-1/2 flex-col rounded-lg bg-surface shadow-pop focus:outline-none', width)}
+          className={clsx('fixed left-1/2 top-[8vh] z-50 flex max-h-[84vh] w-[calc(100vw-2rem)] -translate-x-1/2 flex-col overflow-hidden rounded-lg bg-surface shadow-pop focus:outline-none', width)}
           style={{ animation: 'slide-up .18s ease-out' }}
         >
           <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-4">

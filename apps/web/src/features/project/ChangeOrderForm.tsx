@@ -2,9 +2,8 @@ import { Checkbox, Input, Select } from '@/components/ui/form'
 import type { ChangeOrderDetails } from '@/lib/types'
 
 /* NOTE: the option lists below are placeholders. In Retool they come from dropdown queries that are not in the export. */
-export const CO_IMPACT = ['None', 'Low', 'Medium', 'High']
-export const CO_TIMELINE = ['None', 'Under 1 week', '1 to 2 weeks', 'Over 2 weeks']
-export const CO_PARTIES = ['Homeowner', 'Elephant Energy', 'Installer']
+export { CO_IMPACT, CO_PARTIES, CO_TIMELINE } from '@/lib/options'
+import { CO_IMPACT, CO_PARTIES, CO_TIMELINE } from '@/lib/options'
 
 export const blankChangeOrder = (): ChangeOrderDetails => ({
   description: '', reason: '', impact: '', timeline: '', requester: '', responsible: '', customerConsent: false, installerConsent: false,

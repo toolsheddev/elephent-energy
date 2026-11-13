@@ -67,6 +67,7 @@ export const api = {
     act<number>(projectId, 'quickAddBaseDesigns', payload),
   updateCircuitLength: (projectId: number, lineId: number, length: number, difficult: boolean) => act(projectId, 'updateCircuitLength', lineId, length, difficult),
   createMaintenancePlan: (projectId: number, p: { proposalId: number; level: string; counts: import('@sd/domain/maintenancePlan').MaintenanceCounts }) => act<SystemRec>(projectId, 'createMaintenancePlan', p),
+  lookups: () => http<{ states: string[]; countiesByState: Record<string, string[]>; gasUtilities: string[]; electricUtilities: string[] }>('/api/lookups'),
   listUtilities: () => http<{ utility_name: string; bayou_utility_name: string | null; is_gas: boolean; is_electrical: boolean }[]>('/api/utilities'),
   requestUtilityData: (projectId: number, req: { kind: string; via: 'bayou' | 'email' | 'companycam'; photos: string[] }) => act(projectId, 'requestUtilityData', req),
   recalculateSystems: (projectId: number, systemIds: number[]) => act<{ systems: number; lines: number; notes: string[] }>(projectId, 'recalculateSystems', systemIds),
