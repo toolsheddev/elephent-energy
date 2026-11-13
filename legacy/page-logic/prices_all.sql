@@ -1,0 +1,1 @@
+select * from prices_new where active_date <= {{ PricingEffectiveDate.value ? PricingEffectiveDate.value : moment() }} and (inactive_date is null or inactive_date > {{ PricingEffectiveDate.value ? PricingEffectiveDate.value : moment() }})

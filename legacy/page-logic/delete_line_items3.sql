@@ -1,0 +1,1 @@
+delete from line_items_new where system_id = {{ system_id }} and manually_added = false

@@ -1,0 +1,1 @@
+select * from ahri_certifications_new where id = {{id}}

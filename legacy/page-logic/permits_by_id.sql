@@ -1,0 +1,1 @@
+SELECT * FROM permits_new WHERE id = ANY({{permitIds}})

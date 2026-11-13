@@ -1,0 +1,1 @@
+SELECT * FROM maintenance_plans_new

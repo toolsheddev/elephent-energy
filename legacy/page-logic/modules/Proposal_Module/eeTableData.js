@@ -1,0 +1,5 @@
+return [{"Upgrades":"Energy Audit","ourRecommendations":"If you are unsure of the upgrades you would like, let’s get a baseline of where you are today and determine the best solutions for where you want to be tomorrow. ","value":"$450","yourPrice":"250"},
+{"Upgrades":"Attic Insulation","ourRecommendations":"Blown insulation on top of existing insulation plus air sealing. Your attic " + atticSqft.value + " Ft²","value":"$2.75 to $3.00 sq.ft.","yourPrice": atticPrice.value},
+{"Upgrades":"Crawl Space Insulation","ourRecommendations":"Vapor barrier, insulation of crawl space walls and rim joists. Your crawl space " + crawlSpaceSqft.value + " Ft²","value":"$4.00 to $7.00 sq. ft.","yourPrice": crawlSpacePrice.value},
+{"Upgrades":"Whole Home Air Sealing","ourRecommendations":"Blower-door directed whole home air sealing","value": "$" + airsealingValue.value,"yourPrice": airSealingPrice.value}
+]

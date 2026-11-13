@@ -1,0 +1,1 @@
+customers?filter[name]={{ customer.data[0].first_name + ' ' + customer.data[0].last_name }}

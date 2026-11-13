@@ -1,0 +1,1 @@
+sales-orders/{{project.data.inflow_sales_order_id}}?include=lines

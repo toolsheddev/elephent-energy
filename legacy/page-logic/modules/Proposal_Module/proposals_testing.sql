@@ -1,0 +1,1 @@
+select * from proposals_new where project_id = {{project_id}} ORDER BY id ASC

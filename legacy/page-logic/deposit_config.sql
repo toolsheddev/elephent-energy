@@ -1,0 +1,1 @@
+select * from deposit_config where proposal_id = {{project.data.finalized_proposal_id}}

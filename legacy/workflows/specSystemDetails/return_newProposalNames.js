@@ -1,0 +1,1 @@
+return parse_proposals.data.newProposalNames

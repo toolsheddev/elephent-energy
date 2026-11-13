@@ -1,0 +1,13 @@
+SELECT
+  id,
+  name,
+  incentive_type,
+  recipient,
+  active_date,
+  inactive_date,
+  incentive_criteria,
+  system_type,
+  finance_fee,
+  affects_tax_credit
+FROM
+  incentives_new;

@@ -1,0 +1,1 @@
+SELECT * FROM ahri_certifications_new WHERE id = ANY({{getSystems.data.map(item => item.ahri_id)}})

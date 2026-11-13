@@ -1,0 +1,1 @@
+select * from hdd_new where house_id = {{house.value.id}} LIMIT 1

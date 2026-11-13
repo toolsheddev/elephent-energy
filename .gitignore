@@ -1,0 +1,18 @@
+node_modules
+dist
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.data
+
+# production exports (real customer data)
+*.csv
+data/export/
+
+# Retool exports (app and workflow JSON, decoded page, example inputs)
+legacy/**/*.json
+/*.json
+!/package.json
+!/package-lock.json
+!/tsconfig*.json

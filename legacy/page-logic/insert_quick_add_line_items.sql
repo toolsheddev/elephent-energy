@@ -1,0 +1,36 @@
+INSERT INTO line_items_new (
+    system_id,
+    equipment_id,
+    labor_id,
+    incentive_id,
+    incentive_recipient,
+    line_item_type,
+    quantity,
+    price_actual,
+    show_in_proposal,
+    description,
+    equipment_provider,
+    margin_amount,
+    margin_to_include,
+    additional_data,
+    zone_index,
+    line_item_created_at
+)
+SELECT 
+    {{ current_sys_id }},
+    equipment_id,
+    labor_id,
+    incentive_id,
+    incentive_recipient,
+    line_item_type,
+    COALESCE(quantity, 1),
+    price_actual,
+    COALESCE(show_in_proposal, false),
+    description,
+    equipment_provider,
+    margin_amount,
+    margin_to_include,
+    additional_data,
+    zone_index,
+    NOW()
+FROM jsonb_populate_recordset(null::line_items_new, {{ current_line_items }}::jsonb);

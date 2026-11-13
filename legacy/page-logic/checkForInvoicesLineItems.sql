@@ -1,0 +1,1 @@
+select * from invoice_line_items_new where invoice_id = {{checkForInvoices.data[0].id  }}

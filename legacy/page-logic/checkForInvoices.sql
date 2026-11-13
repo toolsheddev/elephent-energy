@@ -1,0 +1,1 @@
+select * from invoices_new where project_id = {{ project.data.id }} and invoice_type ='Final Invoice'

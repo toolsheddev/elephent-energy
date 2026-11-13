@@ -1,0 +1,1 @@
+select * from prices_new where maintenance_plan_id IS NOT null

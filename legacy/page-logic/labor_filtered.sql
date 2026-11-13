@@ -1,0 +1,1 @@
+SELECT * FROM labor_new WHERE id = ANY({{laborIds}})

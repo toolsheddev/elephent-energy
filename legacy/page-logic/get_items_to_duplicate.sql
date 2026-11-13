@@ -1,0 +1,1 @@
+SELECT * FROM line_items_new WHERE system_id = {{ system_id }}

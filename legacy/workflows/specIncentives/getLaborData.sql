@@ -1,0 +1,9 @@
+SELECT
+  id,
+  name,
+  category,
+  subcategory,
+  circuit_amps,
+  circuit_voltage
+FROM
+  labor_minimal

@@ -1,0 +1,1 @@
+Select {{ projectSelector.selectedRowKey }} as project_id

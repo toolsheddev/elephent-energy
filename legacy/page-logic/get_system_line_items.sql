@@ -1,0 +1,1 @@
+select * from line_items_new where system_id = {{target_system_id}}

@@ -1,0 +1,1 @@
+api/v1/deals/{{project.data.pipedrive_deal_id}}?api_token={{pipedrive_api_key.value}}

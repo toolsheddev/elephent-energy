@@ -1,0 +1,1 @@
+SELECT * FROM ahri_certifications_new WHERE id = ANY({{new_systems.rawData.ahri_id}})

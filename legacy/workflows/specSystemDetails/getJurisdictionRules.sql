@@ -1,0 +1,1 @@
+SELECT * FROM jurisdiction_rules_new WHERE is_active = TRUE;

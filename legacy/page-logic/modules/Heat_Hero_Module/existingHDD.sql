@@ -1,0 +1,1 @@
+SELECT * FROM hdd_new WHERE house_id = {{ house.data.id[0] }}

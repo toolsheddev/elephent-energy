@@ -1,0 +1,2 @@
+SELECT DISTINCT state
+FROM zipcode_mapping

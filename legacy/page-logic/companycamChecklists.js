@@ -1,0 +1,1 @@
+projects/{{ salesforce_opportunity.data[0].companycam__ProjectID__c.replace(/^https?:\/\/[^/]+\//, '').replace(/\/$/, '') }}/conditional_checklists/create_from_template

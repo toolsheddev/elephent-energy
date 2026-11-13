@@ -1,0 +1,24 @@
+SELECT
+  id,
+  equipment_name,
+  equipment_type,
+  model_number,
+  model_series,
+  manufacturer,
+  provider,
+  labor_id,
+  additional_equipment_ids,
+  electrical_requirements,
+  max_indoor_units,
+  refrigerant,
+  output_btu,
+  uef,
+  is_energystar,
+  heating_tonnage,
+  capacity_gallons,
+  cfm,
+  hpwh_voltage,
+  afue
+
+FROM
+  equipment_new

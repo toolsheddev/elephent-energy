@@ -1,0 +1,1 @@
+select 1 as triger_point
