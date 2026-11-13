@@ -4,6 +4,7 @@ import { Check, ChevronDown, ChevronRight, LayoutGrid, RotateCcw, Search } from 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Outlet, useMatch } from 'react-router-dom'
 import { Toaster, toast } from '@/components/ui/overlay'
+import { QuickJump } from './QuickJump'
 import { api } from '@/lib/api'
 import { useProject } from '@/lib/hooks'
 
@@ -28,14 +29,6 @@ function AppSwitcher() {
     document.addEventListener('mousedown', down); document.addEventListener('keydown', key)
     return () => { document.removeEventListener('mousedown', down); document.removeEventListener('keydown', key) }
   }, [open])
-
-  useEffect(() => {
-    const key = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setOpen((o) => !o) }
-    }
-    window.addEventListener('keydown', key)
-    return () => window.removeEventListener('keydown', key)
-  }, [])
 
   const groups = useMemo(() => {
     const n = q.trim().toLowerCase()
@@ -97,7 +90,7 @@ function AppSwitcher() {
           </div>
           <div className="flex items-center justify-between border-t border-line bg-canvas/70 px-4 py-2 text-[12px] text-ink-3">
             <span>Only System Design is part of this build.</span>
-            <span><kbd className="rounded border border-line bg-surface px-1.5 font-semibold">Ctrl</kbd> + <kbd className="rounded border border-line bg-surface px-1.5 font-semibold">K</kbd> to open</span>
+            <span />
           </div>
         </div>
       )}
@@ -128,6 +121,12 @@ function Breadcrumbs() {
 
 export function AppShell() {
   const qc = useQueryClient()
+  const [jump, setJump] = useState(false)
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); setJump((o) => !o) } }
+    window.addEventListener('keydown', key)
+    return () => window.removeEventListener('keydown', key)
+  }, [])
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-30 border-b border-line/80 bg-surface/85 backdrop-blur-md">
@@ -141,10 +140,10 @@ export function AppShell() {
 
           <button
             type="button" aria-label="Search projects"
-            onClick={() => document.querySelector<HTMLInputElement>('input[type=search]')?.focus()}
-            className="hidden h-10 w-64 cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 text-[13px] text-ink-3 hover:border-brand-300 lg:flex"
+            onClick={() => setJump(true)}
+            className="hidden h-10 w-72 cursor-pointer items-center gap-2 rounded-lg border border-line bg-surface px-3 text-[13px] leading-none text-ink-3 hover:border-brand-300 lg:flex"
           >
-            <Search className="size-4" /> Search projects
+            <Search className="size-4" /> Jump to a project <kbd className="ml-auto rounded border border-line px-1.5 py-0.5 text-[11px] font-semibold">Ctrl K</kbd>
           </button>
           <button
             type="button" title="Restore the sample data set" aria-label="Reset demo data"
@@ -166,6 +165,7 @@ export function AppShell() {
       <main className="mx-auto w-full max-w-[1560px] flex-1 px-5 py-6">
         <Outlet />
       </main>
+      <QuickJump open={jump} onClose={() => setJump(false)} />
       <Toaster />
     </div>
   )

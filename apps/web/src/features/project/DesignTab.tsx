@@ -79,6 +79,14 @@ export function DesignTab({ bundle: b }: { bundle: ProjectBundle }) {
   const saveInfo = useSaveProjectInfo(pid)
   const updSystem = useUpdateSystem(pid)
   const recalculate = useRecalculate(pid)
+  // The quote panel asks for these with ?do=finalize or ?do=qa
+  const doParam = params.get('do')
+  useEffect(() => {
+    if (!doParam) return
+    setParams((p) => { p.delete('do'); return p }, { replace: true })
+    if (doParam === 'finalize') setConfirmFinalize(true)
+    if (doParam === 'qa') setQaOpen(true)
+  }, [doParam, setParams])
 
   if (!proposal) {
     return (
@@ -323,26 +331,6 @@ export function DesignTab({ bundle: b }: { bundle: ProjectBundle }) {
             />
           </Card>
           )}
-        {/* Finalize: Retool's Submit for QA and Finalize buttons, with the "Must fill out..." warnings listed above them */}
-        {!b.project.finalized_proposal_id && (
-          <Card>
-            <div className="flex flex-wrap items-start justify-between gap-4 p-5">
-              <div className="min-w-0 flex-1">
-                {blockers.length > 0 ? (
-                  <Banner tone="warn" title={`${blockers.length} thing${blockers.length === 1 ? '' : 's'} to fill in before QA`}>
-                    <ul className="mt-1 list-disc pl-4 text-[13.5px]">{blockers.map((c) => <li key={c.id}>{c.label}{c.where === 'project' ? ' (Home Info or Project Overview tab)' : ''}</li>)}</ul>
-                  </Banner>
-                ) : (
-                  <p className="pt-2 text-[14px] font-semibold text-ok">All required fields are filled in.</p>
-                )}
-              </div>
-              <div className="flex shrink-0 gap-2">
-                <Button disabled={proposal.status !== 'pending' || systems.filter((x) => x.system_type !== 'other').length === 0} onClick={() => setQaOpen(true)}>Submit for QA</Button>
-                <Button variant="primary" disabled={systems.filter((x) => x.system_type !== 'other').length === 0} onClick={() => setConfirmFinalize(true)}>Finalize</Button>
-              </div>
-            </div>
-          </Card>
-        )}
       </div>
 
       <Drawer open={preview} onOpenChange={setPreview} width="max-w-[1180px]" title="Proposal preview" description={`${proposal.nickname} · what the customer receives`}>

@@ -1,76 +1,113 @@
 import clsx from 'clsx'
-import { ArrowLeft, ChevronsLeft, ChevronsRight, Mail, MapPin, Phone, RefreshCw, Search, Trash2, TriangleAlert, User } from 'lucide-react'
+import { Check, ChevronLeft, Mail, MapPin, Phone, Trash2, TriangleAlert } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Button, EmptyState, Skeleton } from '@/components/ui/core'
-import { Tab, TabList, TabPanel, Tabs } from '@/components/ui/tabs'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { EmptyState, Skeleton } from '@/components/ui/core'
 import { toast } from '@/components/ui/overlay'
 import { api } from '@/lib/api'
-import { useProject, useProjects } from '@/lib/hooks'
+import { readiness } from '@/lib/calc'
+import { useProject } from '@/lib/hooks'
+import type { ProjectBundle } from '@/lib/types'
 import { ProjectStatusPill } from '../projects/ProjectsPage'
 import { ConfirmDialog, DesignTab } from './DesignTab'
 import { InvoicesTab } from './InvoicesTab'
-import { HomeInfoTab, OverviewTab, ProjectForm } from './ProjectTab'
+import { OptionCards } from './OptionCards'
+import { CustomerSection, ExistingSection, FinancingSection, HandoffSection, HomeSection, ProjectForm, SizingCard, StatusCard } from './ProjectTab'
+import { QuotePanel, jumpTo } from './QuotePanel'
+import { StageLine } from './StageLine'
+import { isComplete, stageOf } from './quote'
 
-/** Left rail: the Retool "Search Projects" list, so you can hop between projects without going back. */
-function ProjectSwitcher({ activeId, collapsed, onToggle }: { activeId: number; collapsed: boolean; onToggle: () => void }) {
-  const nav = useNavigate()
-  const { data, isLoading, isFetching, refetch } = useProjects()
-  const [q, setQ] = useState('')
-  const rows = useMemo(() => {
-    const n = q.trim().toLowerCase()
-    return (data ?? []).filter((r) => !n || `${r.first_name} ${r.last_name} ${r.deal_title} ${r.id}`.toLowerCase().includes(n))
-  }, [data, q])
+const SECTIONS = [
+  ['sec-customer', 'Customer'], ['sec-home', 'Home'], ['sec-existing', 'Existing systems'], ['sec-design', 'Options and pricing'],
+  ['sec-financing', 'Financing'], ['sec-invoices', 'Invoices'], ['sec-handoff', 'Handoff'], ['sec-status', 'Status and people'],
+] as const
 
-  if (collapsed) {
-    return (
-      <aside className="hidden lg:block" aria-label="Projects">
-        <button type="button" onClick={onToggle} aria-label="Show project list" title="Show project list"
-          className="sticky top-[88px] flex size-10 cursor-pointer items-center justify-center rounded-xl border border-line bg-surface text-ink-2 shadow-card hover:border-brand-300 hover:text-brand-700">
-          <ChevronsRight className="size-4" />
-        </button>
-      </aside>
-    )
-  }
+/** Which section each unmet "before signing" check belongs to. */
+const SECTION_OF: Record<string, string> = {
+  timeline: 'sec-handoff', handoff: 'sec-handoff', financing: 'sec-financing', ma: 'sec-financing',
+  address: 'sec-home', panel: 'sec-existing', heating: 'sec-existing', wh: 'sec-existing', systems: 'sec-design',
+}
 
+function DealHeader({ b, onDelete }: { b: ProjectBundle; onDelete: () => void }) {
+  const p = b.project
   return (
-    <aside className="hidden lg:block" aria-label="Projects">
-      <div className="sticky top-[88px] flex max-h-[calc(100vh-110px)] flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-card">
-        <div className="space-y-3 border-b border-line p-3">
-          <div className="flex gap-2">
-            <Button variant="primary" className="flex-1" icon={<ArrowLeft className="size-4" />} onClick={() => nav('/')}>Go Back</Button>
-            <button type="button" onClick={onToggle} aria-label="Hide project list" title="Hide project list" className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md border border-line-strong text-ink-2 hover:bg-sunken"><ChevronsLeft className="size-4" /></button>
+    <section className="rounded-2xl border border-line bg-surface p-5 shadow-card">
+      <div className="flex flex-wrap items-start gap-x-4 gap-y-3">
+        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-100 text-[16px] font-extrabold text-brand-700">{p.first_name[0]}{p.last_name[0]}</div>
+        <div className="min-w-0 flex-1 basis-72">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <h1 className="text-[24px] font-extrabold leading-tight tracking-tight">{p.first_name} {p.last_name}</h1>
+            <ProjectStatusPill status={p.project_status} />
+            {p.blocker && <span className="inline-flex items-center gap-1.5 rounded-full bg-bad-bg px-2.5 py-1 text-[12.5px] font-semibold leading-none text-bad"><TriangleAlert className="size-3.5" /> Blocked: {p.blocker}</span>}
+            <button type="button" aria-label="Delete project" title="Delete project" onClick={onDelete} className="cursor-pointer rounded-md p-1.5 text-ink-3 hover:bg-bad-bg hover:text-bad"><Trash2 className="size-4" /></button>
           </div>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
-            <input
-              value={q} onChange={(e) => setQ(e.target.value)} placeholder="Deal title, name, etc." aria-label="Search projects"
-              className="h-9 w-full rounded-md border border-line-strong bg-surface pl-9 pr-3 text-[13px] placeholder:text-ink-3 focus:border-brand-500 focus:outline-none focus:ring-3 focus:ring-brand-100"
-            />
+          <p className="mt-0.5 text-[14px] text-ink-3">{p.deal_title} · #{p.id}</p>
+          <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[13.5px] text-ink-2">
+            {b.house && <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5 text-ink-3" />{b.house.address}, {b.house.city}, {b.house.state}</span>}
+            {p.phone && <span className="inline-flex items-center gap-1.5"><Phone className="size-3.5 text-ink-3" />{p.phone}</span>}
+            {p.email && <span className="inline-flex items-center gap-1.5"><Mail className="size-3.5 text-ink-3" />{p.email}</span>}
           </div>
         </div>
-        <ul className="min-h-0 flex-1 overflow-y-auto">
-          {isLoading && Array.from({ length: 6 }).map((_, i) => <li key={i} className="p-3"><Skeleton className="h-9 w-full" /></li>)}
-          {rows.map((r) => (
-            <li key={r.id}>
-              <button
-                type="button" onClick={() => nav(`/projects/${r.id}`)} aria-current={r.id === activeId ? 'true' : undefined}
-                className={clsx('block w-full cursor-pointer border-b border-line px-3.5 py-2.5 text-left transition-colors', r.id === activeId ? 'bg-brand-50 shadow-[inset_3px_0_0_var(--color-brand-600)]' : 'hover:bg-sunken')}
-              >
-                <span className="block truncate text-[13.5px] font-semibold">{r.first_name} {r.last_name}</span>
-                <span className="block truncate text-[12px] text-ink-3">{r.deal_title}</span>
-              </button>
-            </li>
-          ))}
-          {!isLoading && rows.length === 0 && <li className="p-6 text-center text-[13px] text-ink-3">No project matches.</li>}
-        </ul>
-        <div className="flex items-center justify-between border-t border-line px-3.5 py-2 text-[12px] text-ink-3">
-          <span><span className="num font-semibold text-ink-2">{rows.length.toLocaleString()}</span> results</span>
-          <button type="button" aria-label="Refresh list" onClick={() => refetch()} className="cursor-pointer rounded p-1 hover:bg-sunken hover:text-ink"><RefreshCw className={clsx('size-3.5', isFetching && 'animate-spin')} /></button>
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center rounded-full bg-sunken px-3 py-1.5 text-[13px] font-medium leading-none">HCA · {p.hca || 'unassigned'}</span>
+          <span className="inline-flex items-center rounded-full bg-sunken px-3 py-1.5 text-[13px] font-medium leading-none">PM · {p.pm || 'unassigned'}</span>
         </div>
       </div>
-    </aside>
+      <div className="mt-5"><StageLine current={stageOf(b)} complete={isComplete(p.project_status)} /></div>
+    </section>
+  )
+}
+
+/** Left rail: every step of the deal, with a tick when it is done and a ring when something is still missing. Highlights the one in view. */
+function JourneyRail({ b }: { b: ProjectBundle }) {
+  const [active, setActive] = useState<string>(SECTIONS[0][0])
+  const open = useMemo(() => {
+    const s = new Set<string>()
+    for (const c of readiness(b, b.proposals[0]?.id)) if (!c.ok) s.add(SECTION_OF[c.id] ?? 'sec-home')
+    if (b.project.blocker) s.add('sec-status')
+    return s
+  }, [b])
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => { const v = entries.filter((e) => e.isIntersecting).sort((x, y) => x.boundingClientRect.top - y.boundingClientRect.top)[0]; if (v) setActive(v.target.id) },
+      { rootMargin: '-90px 0px -60% 0px' },
+    )
+    SECTIONS.forEach(([id]) => { const el = document.getElementById(id); if (el) obs.observe(el) })
+    return () => obs.disconnect()
+  }, [])
+
+  return (
+    <nav aria-label="Sections" className="flex gap-1 overflow-x-auto pb-1 lg:sticky lg:top-[84px] lg:grid lg:gap-0.5 lg:overflow-visible lg:pb-0">
+      {SECTIONS.map(([id, label]) => {
+        const warn = open.has(id)
+        return (
+          <button
+            key={id} type="button" onClick={() => jumpTo(id)} aria-current={active === id ? 'location' : undefined}
+            className={clsx('flex min-h-10 shrink-0 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-left text-[14px] leading-none transition-colors', active === id ? 'bg-brand-50 font-semibold text-brand-700' : 'font-medium text-ink-3 hover:bg-sunken hover:text-ink')}
+          >
+            <span className={clsx('flex size-[18px] shrink-0 items-center justify-center rounded-full border-2', warn ? 'border-warn' : 'border-ok bg-ok text-white')} aria-label={warn ? 'Needs attention' : 'Done'}>
+              {!warn && <Check className="size-3" strokeWidth={3.5} />}
+            </span>
+            <span className="whitespace-nowrap">{label}</span>
+          </button>
+        )
+      })}
+    </nav>
+  )
+}
+
+/** `bare` sections hold cards that already carry their own heading, so the title is only there for screen readers and the rail. */
+function Section({ id, title, hint, bare, children }: { id: string; title: string; hint?: string; bare?: boolean; children: React.ReactNode }) {
+  return (
+    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-[84px] space-y-4">
+      <div className={bare ? 'sr-only' : undefined}>
+        <h2 id={`${id}-h`} className="text-[18px] font-extrabold tracking-tight">{title}</h2>
+        {hint && <p className="text-[13.5px] text-ink-3">{hint}</p>}
+      </div>
+      {children}
+    </section>
   )
 }
 
@@ -80,88 +117,53 @@ export function ProjectPage() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const id = Number(useParams().projectId)
   const { data: b, isLoading, error } = useProject(id)
-  const [params, setParams] = useSearchParams()
-  const [collapsed, setCollapsed] = useState(() => {
-    // Remember the choice; with no choice yet, start collapsed on narrower screens so the tables get the room.
-    try { const v = localStorage.getItem('sd-sidebar-collapsed'); if (v !== null) return v === '1' } catch { /* ignore */ }
-    return window.innerWidth < 1400
-  })
-  const toggleSidebar = () => setCollapsed((c) => { try { localStorage.setItem('sd-sidebar-collapsed', c ? '0' : '1') } catch { /* ignore */ } return !c })
-  const tab = params.get('tab') ?? 'overview'
-  const setTab = (t: string) => setParams((p) => { p.set('tab', t); return p }, { replace: true })
+
+  if (isLoading) {
+    return <div className="space-y-4"><Skeleton className="h-40 w-full rounded-2xl" /><Skeleton className="h-96 w-full rounded-2xl" /></div>
+  }
+  if (error || !b) {
+    return <EmptyState title="Project not found" action={<Link to="/" className="font-semibold text-brand-600 underline">Back to projects</Link>}>We could not load project {id}.</EmptyState>
+  }
 
   return (
-    <div className={clsx('grid items-start gap-5', collapsed ? 'lg:grid-cols-[40px_minmax(0,1fr)]' : 'lg:grid-cols-[280px_minmax(0,1fr)]')} style={{ animation: 'fade-in .2s' }}>
-      <ProjectSwitcher activeId={id} collapsed={collapsed} onToggle={toggleSidebar} />
-
-      <div className="min-w-0">
-        {isLoading ? (
-          <div className="space-y-4"><Skeleton className="h-28 w-full rounded-xl" /><Skeleton className="h-96 w-full rounded-xl" /></div>
-        ) : error || !b ? (
-          <EmptyState title="Project not found" action={<Link to="/" className="font-semibold text-brand-600 underline">Back to projects</Link>}>We could not load project {id}.</EmptyState>
-        ) : (
-          <>
-          <ConfirmDialog
-            open={confirmDelete} onClose={() => setConfirmDelete(false)} title={`Delete ${b.project.first_name} ${b.project.last_name}?`}
-            body="The customer, home, proposals, systems, line items and invoices of this project are all removed. This cannot be undone."
-            onConfirm={async () => {
-              await api.deleteProject(b.project.id)
-              await qc.invalidateQueries({ queryKey: ['projects'] })
-              setConfirmDelete(false)
-              toast.success('Project deleted')
-              nav('/')
-            }}
-          />
-          <ProjectForm bundle={b}>
-            <div className="space-y-5">
-              <div className="overflow-hidden rounded-xl border border-line bg-surface shadow-card">
-                {/* Header */}
-                <div className="relative overflow-hidden bg-linear-to-br from-brand-700 via-brand-800 to-brand-900 px-6 py-5 text-white">
-                  <div aria-hidden className="pointer-events-none absolute -right-16 -top-24 size-72 rounded-full bg-brand-400/25 blur-3xl" />
-                  <div className="relative flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-                    <div className="flex min-w-0 items-center gap-4">
-                      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/12 text-[17px] font-extrabold ring-1 ring-white/25">{b.project.first_name[0]}{b.project.last_name[0]}</div>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2.5">
-                          <h1 className="text-[22px] font-extrabold leading-tight tracking-tight">{b.project.first_name} {b.project.last_name}</h1>
-                          <ProjectStatusPill status={b.project.project_status} />
-                          {b.project.blocker && <span className="inline-flex items-center gap-1.5 rounded-full bg-bad px-2.5 py-0.5 text-[12px] font-bold"><TriangleAlert className="size-3.5" /> Blocked</span>}
-                          <button type="button" aria-label="Delete project" title="Delete project" onClick={() => setConfirmDelete(true)}
-                            className="ml-1 cursor-pointer rounded-md p-1.5 text-brand-200 hover:bg-white/10 hover:text-white"><Trash2 className="size-4" /></button>
-                        </div>
-                        <p className="mt-0.5 text-[13.5px] text-brand-200">{b.project.deal_title} · #{b.project.id}</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-[13px] text-brand-100">
-                      {b.house && <span className="inline-flex items-center gap-1.5"><MapPin className="size-3.5 text-brand-300" />{b.house.address}, {b.house.city}, {b.house.state}</span>}
-                      <span className="inline-flex items-center gap-1.5"><Phone className="size-3.5 text-brand-300" />{b.project.phone}</span>
-                      <span className="inline-flex items-center gap-1.5"><Mail className="size-3.5 text-brand-300" />{b.project.email}</span>
-                      <span className="inline-flex items-center gap-1.5"><User className="size-3.5 text-brand-300" />HCA {b.project.hca} · PM {b.project.pm}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <Tabs value={tab} onValueChange={setTab}>
-                  <TabList className="px-3">
-                    <Tab value="overview">Project Overview</Tab>
-                    <Tab value="home">Home Info</Tab>
-                    <Tab value="design" count={b.systems.length}>System Design</Tab>
-                    <Tab value="invoices" count={b.invoices?.length || undefined}>Invoices</Tab>
-                  </TabList>
-                </Tabs>
-              </div>
-
-              <Tabs value={tab} onValueChange={setTab}>
-                <TabPanel value="overview"><OverviewTab bundle={b} /></TabPanel>
-                <TabPanel value="home"><HomeInfoTab bundle={b} /></TabPanel>
-                <TabPanel value="design"><DesignTab bundle={b} /></TabPanel>
-                <TabPanel value="invoices"><InvoicesTab bundle={b} /></TabPanel>
-              </Tabs>
+    <div className="space-y-5" style={{ animation: 'fade-in .2s' }}>
+      <ConfirmDialog
+        open={confirmDelete} onClose={() => setConfirmDelete(false)} title={`Delete ${b.project.first_name} ${b.project.last_name}?`}
+        body="The customer, home, proposals, systems, line items and invoices of this project are all removed. This cannot be undone."
+        onConfirm={async () => {
+          await api.deleteProject(b.project.id)
+          await qc.invalidateQueries({ queryKey: ['projects'] })
+          setConfirmDelete(false)
+          toast.success('Project deleted')
+          nav('/')
+        }}
+      />
+      <Link to="/" className="inline-flex items-center gap-1 text-[13.5px] font-semibold text-ink-3 hover:text-brand-700"><ChevronLeft className="size-4" /> All projects</Link>
+      <ProjectForm bundle={b}>
+        <div className="space-y-5">
+          <DealHeader b={b} onDelete={() => setConfirmDelete(true)} />
+          <div className="grid items-start gap-5 lg:grid-cols-[210px_minmax(0,1fr)] xl:grid-cols-[210px_minmax(0,1fr)_320px]">
+            <JourneyRail b={b} />
+            <div className="min-w-0 space-y-10">
+              {!b.house && (
+                <EmptyState title="This project has no home record">Fill in the address in the Home section to create it.</EmptyState>
+              )}
+              <Section id="sec-customer" bare title="Customer"><CustomerSection /></Section>
+              <Section id="sec-home" bare title="Home"><HomeSection /><SizingCard /></Section>
+              <Section id="sec-existing" bare title="Existing systems"><ExistingSection /></Section>
+              <Section id="sec-design" title="Options and pricing" hint="Pick an option to work on its systems. The quote updates as you go.">
+                <OptionCards bundle={b} />
+                <DesignTab bundle={b} />
+              </Section>
+              <Section id="sec-financing" bare title="Financing and rebates"><FinancingSection /></Section>
+              <Section id="sec-invoices" bare title="Invoices"><InvoicesTab bundle={b} /></Section>
+              <Section id="sec-handoff" bare title="Handoff"><HandoffSection /></Section>
+              <Section id="sec-status" bare title="Status and people"><StatusCard bundle={b} /></Section>
             </div>
-          </ProjectForm>
-          </>
-        )}
-      </div>
+            <QuotePanel bundle={b} className="lg:col-span-2 xl:col-span-1 xl:col-start-3 xl:row-start-1" />
+          </div>
+        </div>
+      </ProjectForm>
     </div>
   )
 }

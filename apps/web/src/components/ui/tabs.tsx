@@ -6,7 +6,7 @@ export const Tabs = RT.Root
 
 export function TabList({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <RT.List className={clsx('flex gap-1 overflow-x-auto border-b border-line', className)}>{children}</RT.List>
+    <RT.List className={clsx('flex gap-1 overflow-x-auto overflow-y-hidden border-b border-line', className)}>{children}</RT.List>
   )
 }
 

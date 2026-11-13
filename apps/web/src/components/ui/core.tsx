@@ -33,7 +33,7 @@ export function Button({
       type="button"
       disabled={disabled || loading}
       className={clsx(
-        'inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-md font-semibold transition-colors disabled:cursor-not-allowed',
+        'inline-flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-md font-semibold leading-none transition-colors disabled:cursor-not-allowed',
         variants[variant], sizes[size], className,
       )}
       {...rest}
@@ -74,7 +74,7 @@ export function CardHeader({
   title, subtitle, actions, icon, className,
 }: { title: ReactNode; subtitle?: ReactNode; actions?: ReactNode; icon?: ReactNode; className?: string }) {
   return (
-    <header className={clsx('flex items-center justify-between gap-4 border-b border-line px-5 py-3.5', className)}>
+    <header className={clsx('flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-b border-line px-5 py-3.5', className)}>
       <div className="flex min-w-0 items-center gap-3">
         {icon && <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 [&>svg]:size-[18px]">{icon}</span>}
         <div className="min-w-0">
@@ -82,7 +82,7 @@ export function CardHeader({
           {subtitle && <p className="mt-0.5 text-[13px] text-ink-3">{subtitle}</p>}
         </div>
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && <div className="flex min-w-0 flex-wrap items-center gap-2">{actions}</div>}
     </header>
   )
 }
@@ -173,7 +173,7 @@ export function Stat({
 export function Skeleton({ className }: { className?: string }) {
   return (
     <div className={clsx('relative overflow-hidden rounded-md bg-sunken', className)}>
-      <div className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/60 to-transparent" style={{ animation: 'shimmer 1.4s infinite' }} />
+      <div className="skeleton-sheen absolute inset-y-0 left-0 w-1/3 bg-linear-to-r from-transparent via-white/40 to-transparent" />
     </div>
   )
 }

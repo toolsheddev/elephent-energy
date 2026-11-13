@@ -1,14 +1,13 @@
 import clsx from 'clsx'
-import { CheckCircle2, ClipboardList, Circle, Flame, Home, Landmark, Save, Thermometer, Undo2, UserRound, Activity } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { ClipboardList, Flame, Home, Landmark, Save, Thermometer, Undo2, UserRound, Activity } from 'lucide-react'
+import { useEffect, type ReactNode } from 'react'
 import {
   Controller, FormProvider, useFieldArray, useForm, useFormContext, useWatch,
 } from 'react-hook-form'
-import { useSearchParams } from 'react-router-dom'
 import { Banner, Button, Card, CardBody, CardHeader, FormGrid, StatusPill } from '@/components/ui/core'
 import { Checkbox, Input, MultiSelect, NumberInput, Segmented, Select, Switch, Textarea } from '@/components/ui/form'
 import { toast } from '@/components/ui/overlay'
-import { invoiceStatuses, readiness, rollupProposalStatus } from '@/lib/calc'
+import { invoiceStatuses, rollupProposalStatus } from '@/lib/calc'
 import { useSaveProjectInfo } from '@/lib/hooks'
 import * as O from '@/lib/options'
 import type { ExistingSystems, House, Project, ProjectBundle } from '@/lib/types'
@@ -79,112 +78,7 @@ export function ProjectForm({ bundle, children }: { bundle: ProjectBundle; child
   )
 }
 
-/** "Project Overview" tab: who the project is, where it stands, and what is left before finalizing. */
-export function OverviewTab({ bundle }: { bundle: ProjectBundle }) {
-  const [, setParams] = useSearchParams()
-  const checks = readiness(bundle)
-  const missing = checks.filter((c) => !c.ok)
-  const { project: p, house: h } = bundle
-  return (
-    <div className="grid items-start gap-5 xl:grid-cols-2">
-      <Card>
-        <CardHeader icon={<UserRound />} title="Project Info" subtitle={p.deal_title} />
-        <CardBody className="space-y-4">
-          <div>
-            <p className="text-[20px] font-extrabold leading-tight tracking-tight">{p.first_name} {p.last_name}</p>
-            {h && <p className="mt-1 text-[14px] text-ink-2">{h.address}, {h.city}, {h.state} {h.zipcode}</p>}
-          </div>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-[14px]">
-            {[['Phone', p.phone], ['Email', p.email], ['HCA', p.hca], ['PM', p.pm], ['Source', p.source], ['Project', `#${p.id}`]].map(([k, v]) => (
-              <div key={k} className="min-w-0"><dt className="text-[11px] font-semibold uppercase tracking-wider text-ink-3">{k}</dt><dd className="mt-0.5 truncate font-medium">{v || '—'}</dd></div>
-            ))}
-          </dl>
-          {p.project_summary && <p className="rounded-md bg-canvas px-3.5 py-3 text-[14px] leading-relaxed text-ink-2">{p.project_summary}</p>}
-        </CardBody>
-      </Card>
-
-      <StatusCard bundle={bundle} />
-
-      <Card className="xl:col-span-2">
-        <CardHeader
-          icon={<CheckCircle2 />} title="Ready to finalize?"
-          subtitle={missing.length === 0 ? 'Everything required is filled in.' : `${missing.length} item${missing.length === 1 ? '' : 's'} left`}
-        />
-        <ul className="grid divide-line sm:grid-cols-2 sm:divide-x">
-          {checks.map((c) => (
-            <li key={c.id} className="flex items-start gap-2.5 border-b border-line px-5 py-2.5 text-[14px]">
-              {c.ok ? <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-ok" /> : <Circle className="mt-0.5 size-4 shrink-0 text-ink-3" />}
-              <span className={clsx(c.ok ? 'text-ink-3' : 'font-medium text-ink')}>{c.label}</span>
-              {!c.ok && c.where === 'design' && (
-                <button type="button" className="ml-auto shrink-0 cursor-pointer text-xs font-semibold text-brand-600 hover:underline" onClick={() => setParams({ tab: 'design' })}>Open</button>
-              )}
-            </li>
-          ))}
-        </ul>
-      </Card>
-    </div>
-  )
-}
-
-/** "Home Info" tab: customer, home, existing systems, financing and handoff. */
-export function HomeInfoTab({ bundle }: { bundle: ProjectBundle }) {
-  return (
-    <>
-      {!bundle.house && (
-        <Banner tone="bad" title="This project has no home record" className="mb-5">
-          Salesforce returned no home for this opportunity. Fill in the address below to create it.
-        </Banner>
-      )}
-      <SectionNav />
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-5">
-          <CustomerSection />
-          <HomeSection />
-          <ExistingSection />
-          <FinancingSection />
-          <HandoffSection />
-        </div>
-        <aside className="space-y-5 xl:sticky xl:top-36">
-          <SizingCard />
-        </aside>
-      </div>
-    </>
-  )
-}
-
-/* ------------------------------------------------------------------ */
-
-const SECTIONS = [
-  ['sec-customer', 'Customer'], ['sec-home', 'Home'], ['sec-existing', 'Existing systems'],
-  ['sec-financing', 'Financing'], ['sec-handoff', 'Handoff'],
-] as const
-
-function SectionNav() {
-  const [active, setActive] = useState<string>(SECTIONS[0][0])
-  useEffect(() => {
-    const obs = new IntersectionObserver(
-      (entries) => { const v = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0]; if (v) setActive(v.target.id) },
-      { rootMargin: '-120px 0px -65% 0px' },
-    )
-    SECTIONS.forEach(([id]) => { const el = document.getElementById(id); if (el) obs.observe(el) })
-    return () => obs.disconnect()
-  }, [])
-  return (
-    <nav aria-label="Sections" className="sticky top-[64px] z-20 -mx-1 mb-4 flex gap-1 overflow-x-auto rounded-xl border border-line bg-surface p-1 shadow-[0_-12px_0_6px_var(--color-canvas),0_2px_8px_rgb(0_0_0/0.06)]">
-      {SECTIONS.map(([id, label]) => (
-        <button
-          key={id} type="button"
-          onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          className={clsx('shrink-0 cursor-pointer rounded-lg px-3.5 py-1.5 text-[13px] font-semibold transition-colors', active === id ? 'bg-brand-600 text-white' : 'text-ink-2 hover:bg-sunken')}
-        >
-          {label}
-        </button>
-      ))}
-    </nav>
-  )
-}
-
-function CustomerSection() {
+export function CustomerSection() {
   const { register, control, formState: { errors } } = useFormContext<Values>()
   const source = useWatch({ control, name: 'project.source' })
   const balance = useWatch({ control, name: 'project.referral_balance' })
@@ -224,7 +118,7 @@ function CustomerSection() {
   )
 }
 
-function HomeSection() {
+export function HomeSection() {
   const { register, control, setValue, formState: { errors } } = useFormContext<Values>()
   const state = useWatch({ control, name: 'house.state' })
   const counties = O.COUNTIES_BY_STATE[state] ?? []
@@ -276,7 +170,7 @@ function ExistingRow({ label, children }: { label: string; children: React.React
   )
 }
 
-function ExistingSection() {
+export function ExistingSection() {
   const { register, control } = useFormContext<Values>()
   const subs = useFieldArray({ control, name: 'existing.subpanels' })
   return (
@@ -328,7 +222,7 @@ function ExistingSection() {
   )
 }
 
-function FinancingSection() {
+export function FinancingSection() {
   const { register, control, setValue } = useFormContext<Values>()
   const state = useWatch({ control, name: 'house.state' })
   const county = useWatch({ control, name: 'house.county' })
@@ -407,7 +301,7 @@ function FinancingSection() {
   )
 }
 
-function HandoffSection() {
+export function HandoffSection() {
   const { register } = useFormContext<Values>()
   return (
     <Card id="sec-handoff" className="scroll-mt-32">
@@ -424,7 +318,7 @@ function HandoffSection() {
 
 /* ---------- Right rail ---------- */
 
-function StatusCard({ bundle }: { bundle: ProjectBundle }) {
+export function StatusCard({ bundle }: { bundle: ProjectBundle }) {
   const { register, control } = useFormContext<Values>()
   const blocker = useWatch({ control, name: 'project.blocker' })
   const st = bundle.project.statuses
@@ -466,7 +360,7 @@ const HDD: Record<string, { design: number; max: number }> = {
 }
 const MANUAL_J = new Set(['Boulder County', 'Denver County', 'Eagle County'])
 
-function SizingCard() {
+export function SizingCard() {
   const { control, register } = useFormContext<Values>()
   const state = useWatch({ control, name: 'house.state' })
   const county = useWatch({ control, name: 'house.county' })
